@@ -25,6 +25,7 @@ import com.codenvy.api.dao.mongo.RecipeDaoImpl;
 import com.codenvy.api.dao.mongo.WorkspaceDaoImpl;
 import com.codenvy.api.dao.util.ProfileMigrator;
 import com.codenvy.api.factory.FactoryMongoDatabaseProvider;
+import com.codenvy.api.permission.server.PermissionsModule;
 import com.codenvy.api.user.server.AdminUserService;
 import com.codenvy.api.user.server.dao.AdminUserDao;
 import com.codenvy.auth.sso.client.EnvironmentContextResolver;
@@ -54,7 +55,6 @@ import org.eclipse.che.api.account.server.dao.AccountDao;
 import org.eclipse.che.api.auth.AuthenticationService;
 import org.eclipse.che.api.core.notification.WSocketEventBusServer;
 import org.eclipse.che.api.core.rest.ApiInfoService;
-import org.eclipse.che.api.core.rest.permission.PermissionManager;
 import org.eclipse.che.api.factory.server.FactoryAcceptValidator;
 import org.eclipse.che.api.factory.server.FactoryCreateValidator;
 import org.eclipse.che.api.factory.server.FactoryEditValidator;
@@ -107,6 +107,8 @@ public class OnPremisesIdeApiModule extends AbstractModule {
 
     @Override
     protected void configure() {
+        install(new PermissionsModule());
+
         bind(ApiInfoService.class);
         bind(ProjectTemplateRegistry.class);
         bind(ProjectTemplateDescriptionLoader.class).asEagerSingleton();
@@ -151,7 +153,6 @@ public class OnPremisesIdeApiModule extends AbstractModule {
 
         bind(MongoDatabase.class).annotatedWith(Names.named("mongo.db.factory"))
                                  .toProvider(FactoryMongoDatabaseProvider.class);
-
 
 
         bind(org.eclipse.che.api.factory.server.FactoryStore.class).to(com.codenvy.api.dao.mongo.MongoDBFactoryStore.class);
@@ -309,10 +310,6 @@ public class OnPremisesIdeApiModule extends AbstractModule {
                           .to(Key.get(String.class, Names.named("api.endpoint")));
 
 //        install(new com.codenvy.router.MachineRouterModule());
-
-        // TODO rebind to WorkspacePermissionManager after account is established
-        bind(PermissionManager.class).annotatedWith(Names.named("service.workspace.permission_manager"))
-                                     .to(DummyPermissionManager.class);
 
         bind(org.eclipse.che.api.workspace.server.event.MachineStateListener.class).asEagerSingleton();
 
