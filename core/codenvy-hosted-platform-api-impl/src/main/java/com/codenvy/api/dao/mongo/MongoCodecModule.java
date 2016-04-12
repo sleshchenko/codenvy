@@ -16,6 +16,7 @@ package com.codenvy.api.dao.mongo;
 
 import com.codenvy.api.dao.mongo.ssh.UsersSshPair;
 import com.codenvy.api.dao.mongo.ssh.UsersSshPairCodec;
+import com.codenvy.api.workspace.server.model.WorkerImpl;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 
@@ -56,6 +57,8 @@ public class MongoCodecModule extends AbstractModule {
                     return (Codec<T>)new UsersSshPairCodec(registry);
                 } else if (clazz == StackImpl.class) {
                     return (Codec<T>)new StackImplCodec(registry);
+                } else if (clazz == WorkerImpl.class) {
+                    return (Codec<T>)new WorkerImplCodec(registry);
                 }
                 return null;
             }

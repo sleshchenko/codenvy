@@ -14,6 +14,7 @@
  */
 package com.codenvy.api.dao.mongo;
 
+import com.codenvy.api.workspace.server.dao.WorkerDao;
 import com.github.fakemongo.Fongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
@@ -37,8 +38,9 @@ import org.eclipse.che.api.machine.server.recipe.RecipeImpl;
 import org.eclipse.che.api.workspace.server.model.impl.EnvironmentImpl;
 import org.eclipse.che.api.workspace.server.model.impl.ProjectConfigImpl;
 import org.eclipse.che.api.workspace.server.model.impl.SourceStorageImpl;
-import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
+import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
+import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
@@ -79,6 +81,9 @@ import static org.testng.Assert.assertTrue;
 @Listeners(value = {MockitoTestNGListener.class})
 public class WorkspaceDaoImplTest {
 
+    @Mock
+    private WorkerDao workerDao;
+
     private MongoCollection<WorkspaceImpl> collection;
     private WorkspaceDaoImpl               workspaceDao;
 
@@ -90,7 +95,7 @@ public class WorkspaceDaoImplTest {
                                             .withCodecRegistry(fromRegistries(defaultRegistry,
                                                                               fromCodecs(new WorkspaceImplCodec(defaultRegistry))));
         collection = database.getCollection("workspaces", WorkspaceImpl.class);
-        workspaceDao = new WorkspaceDaoImpl(database, "workspaces");
+        workspaceDao = new WorkspaceDaoImpl(database, "workspaces", workerDao);
     }
 
     @Test
@@ -117,7 +122,7 @@ public class WorkspaceDaoImplTest {
         // so we need to mock the collection to force fongo behave like mongo driver does
         final MongoDatabase db = mockDatabase(col -> doThrow(mockWriteEx(DUPLICATE_KEY)).when(col).insertOne(any()));
 
-        new WorkspaceDaoImpl(db, "workspaces").create(createWorkspace());
+        new WorkspaceDaoImpl(db, "workspaces", workerDao).create(createWorkspace());
     }
 
     @Test(expectedExceptions = ConflictException.class,
@@ -128,14 +133,14 @@ public class WorkspaceDaoImplTest {
         // so we need to mock the collection to force fongo behave like mongo driver does
         final MongoDatabase db = mockDatabase(col -> doThrow(mockWriteEx(DUPLICATE_KEY)).when(col).findOneAndReplace(any(), any()));
 
-        new WorkspaceDaoImpl(db, "workspaces").update(createWorkspace());
+        new WorkspaceDaoImpl(db, "workspaces", workerDao).update(createWorkspace());
     }
 
     @Test(expectedExceptions = ServerException.class)
     public void testCreateWorkspaceWhenMongoExceptionWasThrew() throws Exception {
         final MongoDatabase db = mockDatabase(col -> doThrow(mock(MongoException.class)).when(col).insertOne(any()));
 
-        new WorkspaceDaoImpl(db, "workspaces").create(createWorkspace());
+        new WorkspaceDaoImpl(db, "workspaces", workerDao).create(createWorkspace());
     }
 
     @Test
@@ -155,7 +160,7 @@ public class WorkspaceDaoImplTest {
     public void testUpdateWhenWorkspaceDoesNotExist() throws Exception {
         final MongoDatabase db = mockDatabase(col -> when(col.updateOne(any(), any())).thenReturn(null));
 
-        new WorkspaceDaoImpl(db, "workspaces").update(createWorkspace());
+        new WorkspaceDaoImpl(db, "workspaces", workerDao).update(createWorkspace());
     }
 
     @Test(expectedExceptions = NullPointerException.class, expectedExceptionsMessageRegExp = "Workspace update must not be null")
@@ -167,7 +172,7 @@ public class WorkspaceDaoImplTest {
     public void testUpdateWorkspaceWhenMongoExceptionWasThrew() throws Exception {
         final MongoDatabase db = mockDatabase(col -> when(col.findOneAndReplace(any(), any())).thenThrow(mock(MongoException.class)));
 
-        new WorkspaceDaoImpl(db, "workspaces").update(createWorkspace());
+        new WorkspaceDaoImpl(db, "workspaces", workerDao).update(createWorkspace());
     }
 
     @Test
