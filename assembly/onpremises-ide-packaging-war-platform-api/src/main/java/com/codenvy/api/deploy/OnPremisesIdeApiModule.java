@@ -255,9 +255,13 @@ public class OnPremisesIdeApiModule extends AbstractModule {
                                 new UriStartFromRequestFilter("/api/oauth/authenticate"),
                                 r -> isNullOrEmpty(r.getParameter("userId"))
                         ),
-                        new UriStartFromRequestFilter("/api/user/settings")
+                        new UriStartFromRequestFilter("/api/user/settings"),
+                        new ConjunctionRequestFilter(
+                                new RegexpRequestFilter("^/api/permissions(/\\w*)?$"),
+                                new RequestMethodFilter("GET")
+                        )
                 )
-                                            );
+        );
 
 
         bindConstant().annotatedWith(Names.named("notification.server.propagate_events")).to("vfs,workspace");

@@ -112,7 +112,9 @@ public class OnPremisesIdeApiServletModule extends ServletModule {
                "/resources/*",
                "/ext/*",
                "/ssh/*",
-               "/ssh")
+               "/ssh",
+               "/permissions",
+               "/permissions/*")
                 .through(com.codenvy.auth.sso.client.LoginFilter.class);
 
         bind(com.codahale.metrics.servlets.ThreadDumpServlet.class).in(Singleton.class);
