@@ -14,21 +14,21 @@
  */
 package com.codenvy.auth.sso.client;
 
-import com.codenvy.auth.sso.server.SsoUser;
-import org.eclipse.che.commons.json.JsonHelper;
-import org.eclipse.che.commons.json.JsonParseException;
-import org.eclipse.che.commons.lang.IoUtil;
-import org.eclipse.che.commons.user.User;
+import com.codenvy.auth.sso.server.SsoService;
+import com.codenvy.auth.sso.shared.dto.UserDto;
 import com.google.inject.name.Named;
 
+import org.eclipse.che.api.core.ApiException;
+import org.eclipse.che.api.core.rest.HttpJsonRequest;
+import org.eclipse.che.api.core.rest.HttpJsonRequestFactory;
+import org.eclipse.che.commons.user.User;
+import org.eclipse.che.commons.user.UserImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLEncoder;
 
 /**
@@ -37,56 +37,41 @@ import java.net.URLEncoder;
  * @author Sergii Kabashniuk
  */
 public class HttpSsoServerClient implements ServerClient {
-
     private static final Logger LOG = LoggerFactory.getLogger(HttpSsoServerClient.class);
-    private final String apiEndpoint;
+
+    private final String                 apiEndpoint;
+    private final HttpJsonRequestFactory requestFactory;
 
     @Inject
-    public HttpSsoServerClient(@Named("api.endpoint") String apiEndpoint) {
+    public HttpSsoServerClient(@Named("api.endpoint") String apiEndpoint,
+                               HttpJsonRequestFactory requestFactory) {
         this.apiEndpoint = apiEndpoint;
+        this.requestFactory = requestFactory;
     }
 
     @Override
     public User getUser(String token, String clientUrl, String workspaceId, String accountId) {
         try {
+            final HttpJsonRequest currentPrincipalRequest = requestFactory.fromUrl(UriBuilder.fromUri(apiEndpoint)
+                                                                                             .path(SsoService.class)
+                                                                                             .path(SsoService.class, "getCurrentPrincipal")
+                                                                                             .build(token)
+                                                                                             .toString())
+                                                                          .useGetMethod()
+                                                                          .addQueryParam("clienturl", clientUrl);
 
-            StringBuilder requestBuilder = new StringBuilder(apiEndpoint);
-            requestBuilder.append("/internal/sso/server");
-            requestBuilder.append("/").append(token);
-            requestBuilder.append("?").append("clienturl=").append(URLEncoder.encode(clientUrl, "UTF-8"));
             if (workspaceId != null) {
-                requestBuilder.append("&").append("workspaceid=").append(URLEncoder.encode(workspaceId, "UTF-8"));
+                currentPrincipalRequest.addQueryParam("workspaceid", workspaceId);
             }
 
             if (accountId != null) {
-                requestBuilder.append("&").append("accountid=").append(URLEncoder.encode(accountId, "UTF-8"));
+                currentPrincipalRequest.addQueryParam("accountid", accountId);
             }
 
-            HttpURLConnection conn = (HttpURLConnection)new URL(requestBuilder.toString()).openConnection();
-            try {
-
-                conn.setRequestMethod("GET");
-                conn.setDoOutput(true);
-
-
-                final int responseCode = conn.getResponseCode();
-                if (responseCode == 400) {
-                    return null;
-                } else if (responseCode != 200) {
-
-                    throw new IOException(
-                            "Error response with status " + responseCode + " for sso client  " + token + ". Message " +
-                            IoUtil.readAndCloseQuietly(conn.getErrorStream()));
-                }
-
-                try (InputStream in = conn.getInputStream()) {
-                    return JsonHelper.fromJson(in, SsoUser.class, null);
-                }
-
-            } finally {
-                conn.disconnect();
-            }
-        } catch (IOException | JsonParseException e) {
+            final UserDto userDto = currentPrincipalRequest.request()
+                                                           .asDto(UserDto.class);
+            return new UserImpl(userDto.getName(), userDto.getId(), userDto.getToken(), userDto.getRoles(), userDto.isTemporary());
+        } catch (ApiException | IOException e) {
             LOG.warn(e.getLocalizedMessage());
         }
         return null;
@@ -95,32 +80,15 @@ public class HttpSsoServerClient implements ServerClient {
     @Override
     public void unregisterClient(String token, String clientUrl) {
         try {
-            StringBuilder requestBuilder = new StringBuilder(apiEndpoint);
-            requestBuilder.append("/internal/sso/server");
-            requestBuilder.append("/").append(token);
-            requestBuilder.append("?").append("clienturl=").append(URLEncoder.encode(clientUrl, "UTF-8"));
-            HttpURLConnection conn = (HttpURLConnection)new URL(requestBuilder.toString()).openConnection();
-            try {
-
-                conn.setRequestMethod("DELETE");
-                conn.setDoOutput(false);
-                conn.setConnectTimeout(5 * 1000);
-                conn.setReadTimeout(5 * 1000);
-
-                final int responseCode = conn.getResponseCode();
-                if (responseCode != 204) {
-                    throw new IOException(
-                            "Error response with status " + responseCode + " for sso client  " + token + ". Message " +
-                            IoUtil.readAndCloseQuietly(conn.getErrorStream()));
-                }
-
-            } finally {
-                conn.disconnect();
-            }
-
-        } catch (IOException e) {
+            requestFactory.fromUrl(apiEndpoint + UriBuilder.fromUri(apiEndpoint)
+                                                           .path(SsoService.class)
+                                                           .path(SsoService.class, "unregisterToken")
+                                                           .build(token))
+                          .useDeleteMethod()
+                          .addQueryParam("clienturl", URLEncoder.encode(clientUrl, "UTF-8"))
+                          .request();
+        } catch (ApiException | IOException e) {
             LOG.warn(e.getLocalizedMessage());
         }
-
     }
 }

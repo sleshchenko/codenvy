@@ -14,6 +14,10 @@
  */
 package com.codenvy.onpremises.deploy;
 
+import com.codenvy.api.permission.server.PermissionTokenHandler;
+import com.codenvy.api.permission.server.PermissionChecker;
+import com.codenvy.api.permission.server.HttpPermissionChecker;
+import com.codenvy.auth.sso.client.RecoverableTokenHandler;
 import com.codenvy.auth.sso.client.ServerClient;
 import com.codenvy.auth.sso.client.filter.RequestFilter;
 import com.codenvy.auth.sso.client.token.RequestTokenExtractor;
@@ -39,7 +43,12 @@ public class IdeModule extends AbstractModule {
 
         bind(RequestTokenExtractor.class).to(com.codenvy.auth.sso.client.token.ChainedTokenExtractor.class);
         bind(com.codenvy.auth.sso.client.SSOContextResolver.class).to(com.codenvy.auth.sso.client.EnvironmentContextResolver.class);
-        bind(com.codenvy.auth.sso.client.TokenHandler.class).to(com.codenvy.auth.sso.client.RecoverableTokenHandler.class);
+
+        bind(PermissionChecker.class).to(HttpPermissionChecker.class);
+        bind(com.codenvy.auth.sso.client.TokenHandler.class).to(PermissionTokenHandler.class);
+        bind(com.codenvy.auth.sso.client.TokenHandler.class).annotatedWith(Names.named("delegated.handler"))
+                                                            .to(RecoverableTokenHandler.class);
+
         bind(ServerClient.class).to(com.codenvy.auth.sso.client.HttpSsoServerClient.class);
         bind(RequestFilter.class).to(com.codenvy.auth.sso.client.filter.RegexpRequestFilter.class);
     }

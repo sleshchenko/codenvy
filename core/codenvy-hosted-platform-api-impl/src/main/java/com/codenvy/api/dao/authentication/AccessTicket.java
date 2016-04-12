@@ -81,6 +81,11 @@ public final class AccessTicket {
             }
 
             @Override
+            public boolean hasPermission(String domain, String instance, String action) {
+                return principal.hasPermission(domain, instance, action);
+            }
+
+            @Override
             public String getToken() {
                 return accessToken;
             }

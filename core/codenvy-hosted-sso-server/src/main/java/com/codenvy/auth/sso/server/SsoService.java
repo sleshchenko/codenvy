@@ -20,9 +20,11 @@ import com.codenvy.api.dao.authentication.CookieBuilder;
 import com.codenvy.api.dao.authentication.TicketManager;
 import com.codenvy.api.dao.authentication.TokenGenerator;
 import com.codenvy.auth.sso.server.organization.UserCreator;
+import com.codenvy.auth.sso.shared.dto.UserDto;
 
 import org.eclipse.che.api.auth.AuthenticationException;
 import org.eclipse.che.commons.user.User;
+import org.eclipse.che.dto.server.DtoFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Set;
 
 import static java.net.URLEncoder.encode;
@@ -52,8 +55,7 @@ import static java.net.URLEncoder.encode;
 /**
  * Centralized authentication service that provide additional functionality.
  * Additional functionality is re-login after session destroying, anonymous login, invalidating some client in ticket
- * manager
- * and retrieving user principal with roles from clients.
+ * manager and retrieving user principal with roles from clients.
  *
  * @author Sergii Kabashnuk
  * @author Alexander Garagatyi
@@ -61,19 +63,28 @@ import static java.net.URLEncoder.encode;
 @Path("internal/sso/server")
 public class SsoService {
     private static final Logger LOG = LoggerFactory.getLogger(SsoService.class);
+
+    private final TicketManager          ticketManager;
+    private final RolesExtractorRegistry rolesExtractorRegistry;
+    private final UserCreator            userCreator;
+    private final TokenGenerator         uniqueTokenGenerator;
+    private final CookieBuilder          cookieBuilder;
+    private final String                 loginPage;
+
     @Inject
-    private TicketManager          ticketManager;
-    @Inject
-    private RolesExtractorRegistry rolesExtractorRegistry;
-    @Inject
-    private UserCreator            userCreator;
-    @Inject
-    private TokenGenerator         uniqueTokenGenerator;
-    @Inject
-    private CookieBuilder          cookieBuilder;
-    @Inject
-    @Named("auth.sso.login_page_url")
-    private String                 loginPage;
+    public SsoService(TicketManager ticketManager,
+                      RolesExtractorRegistry rolesExtractorRegistry,
+                      UserCreator userCreator,
+                      TokenGenerator uniqueTokenGenerator,
+                      CookieBuilder cookieBuilder,
+                      @Named("auth.sso.login_page_url") String loginPage) {
+        this.ticketManager = ticketManager;
+        this.rolesExtractorRegistry = rolesExtractorRegistry;
+        this.userCreator = userCreator;
+        this.uniqueTokenGenerator = uniqueTokenGenerator;
+        this.cookieBuilder = cookieBuilder;
+        this.loginPage = loginPage;
+    }
 
     /**
      * Get principal with roles by token, and register user client on server.
@@ -84,11 +95,10 @@ public class SsoService {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{token}")
     @GET
-    public User getCurrentPrincipal(@PathParam("token") String token,
-                                    @QueryParam("clienturl") String clientUrl,
-                                    @QueryParam("workspaceid") String workspaceId,
-                                    @QueryParam("accountid") String accountId)
-            throws AuthenticationException {
+    public UserDto getCurrentPrincipal(@PathParam("token") String token,
+                                       @QueryParam("clienturl") String clientUrl,
+                                       @QueryParam("workspaceid") String workspaceId,
+                                       @QueryParam("accountid") String accountId) throws AuthenticationException {
 
         LOG.debug("Request user  with token {}", token);
 
@@ -104,32 +114,29 @@ public class SsoService {
 
 
             Set<String> roles = rolesExtractorRegistry.getRoles(accessTicket, workspaceId, accountId);
-            return new SsoUser(accessTicket.getPrincipal().getName(),
-                               accessTicket.getPrincipal().getId(),
-                               accessTicket.getAccessToken(),
-                               roles,
-                               roles.contains("temp_user")
-            );
+            return DtoFactory.newDto(UserDto.class)
+                             .withName(accessTicket.getPrincipal().getName())
+                             .withId(accessTicket.getPrincipal().getId())
+                             .withRoles(new ArrayList<>(roles))
+                             .withTemporary(roles.contains("temp_user"))
+                             .withToken(accessTicket.getAccessToken());
         }
     }
 
     @Metered(name = "auth.sso.service_delete_token")
     @Path("{token}")
     @DELETE
-    public void unregisterToken(@PathParam("token") String token, @QueryParam("clienturl") String clientUrl)
-            throws AuthenticationException {
-
+    public void unregisterToken(@PathParam("token") String token,
+                                @QueryParam("clienturl") String clientUrl) throws AuthenticationException {
         LOG.debug("Un-register token {} and client {} ", token, clientUrl);
         if (clientUrl == null || clientUrl.isEmpty()) {
             ticketManager.removeTicket(token);
         } else {
             AccessTicket accessTicket = ticketManager.getAccessTicket(token);
-            if (accessTicket != null && clientUrl != null) {
+            if (accessTicket != null) {
                 accessTicket.unRegisterClientUrl(clientUrl);
             }
         }
-
-
     }
 
     /**
@@ -148,11 +155,10 @@ public class SsoService {
     @GET
     public Response authenticate(@QueryParam("redirect_url") String redirectUrl,
                                  @CookieParam("token-access-key") Cookie tokenAccessCookie,
-                                 @QueryParam("allowAnonymous") String allowAnonymous, @Context UriInfo uriInfo)
-            throws UnsupportedEncodingException {
+                                 @QueryParam("allowAnonymous") String allowAnonymous,
+                                 @Context UriInfo uriInfo) throws UnsupportedEncodingException {
         Response.ResponseBuilder builder;
         boolean isSecure = uriInfo.getRequestUri().getScheme().equals("https");
-
         try {
             if (tokenAccessCookie != null) {
                 AccessTicket accessTicket = ticketManager.getAccessTicket(tokenAccessCookie.getValue());
@@ -183,9 +189,7 @@ public class SsoService {
                 ((SsoCookieBuilder)cookieBuilder).setCookies(builder, ticket.getAccessToken(), isSecure, true);
 
             } else {
-                builder =
-                        Response.temporaryRedirect(
-                                new URI(loginPage + "?redirect_url=" + encode(redirectUrl, "UTF-8")));
+                builder = Response.temporaryRedirect(new URI(loginPage + "?redirect_url=" + encode(redirectUrl, "UTF-8")));
             }
         } catch (IOException | URISyntaxException e) {
             LOG.error(e.getLocalizedMessage(), e);

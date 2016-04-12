@@ -12,26 +12,16 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.api.deploy;
+package com.codenvy.api.permission.server;
 
-import org.eclipse.che.api.core.ForbiddenException;
+import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.rest.permission.Operation;
-import org.eclipse.che.api.core.rest.permission.PermissionManager;
-
-import javax.inject.Singleton;
-import java.util.Map;
-
-// TODO remove it after account is established
 
 /**
- * Dummy implementation of permission manager.
+ * Checks user's permission to perform some action with particular instance of given domain
  *
- * @author Eugene Voevodin
+ * @author Sergii Leschenko
  */
-@Singleton
-public class DummyPermissionManager implements PermissionManager {
-    @Override
-    public void checkPermission(Operation operation, String s, Map<String, String> map) throws ForbiddenException, ServerException {
-    }
+public interface PermissionChecker {
+    boolean hasPermission(String user, String domain, String instance, String action) throws ServerException, ConflictException;
 }

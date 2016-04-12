@@ -28,6 +28,10 @@
     <dependencies>
         <dependency>
             <groupId>com.codenvy.hosted-infrastructure</groupId>
+            <artifactId>codenvy-hosted-authorization</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.codenvy.hosted-infrastructure</groupId>
             <artifactId>codenvy-hosted-infra-filters</artifactId>
         </dependency>
         <dependency>

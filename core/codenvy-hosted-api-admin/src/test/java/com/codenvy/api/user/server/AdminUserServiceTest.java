@@ -125,6 +125,11 @@ public class AdminUserServiceTest {
             }
 
             @Override
+            public boolean hasPermission(String domain, String instance, String action) {
+                return false;
+            }
+
+            @Override
             public String getToken() {
                 return null;
             }
