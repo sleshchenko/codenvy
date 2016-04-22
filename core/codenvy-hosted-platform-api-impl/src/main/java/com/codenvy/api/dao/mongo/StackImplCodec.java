@@ -24,10 +24,6 @@ import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.types.Binary;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.model.workspace.WorkspaceConfig;
-import org.eclipse.che.api.machine.server.recipe.GroupImpl;
-import org.eclipse.che.api.machine.server.recipe.PermissionsImpl;
-import org.eclipse.che.api.machine.shared.Group;
-import org.eclipse.che.api.machine.shared.Permissions;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackComponentImpl;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackImpl;
@@ -37,14 +33,9 @@ import org.eclipse.che.api.workspace.server.model.stack.StackSource;
 import org.eclipse.che.api.workspace.server.model.stack.StackComponent;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.codenvy.api.dao.mongo.MongoUtil.asDBList;
-import static com.codenvy.api.dao.mongo.MongoUtil.mapAsDocumentsList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -89,12 +80,6 @@ public class StackImplCodec implements Codec<StackImpl> {
             }
         }
 
-        Document permissionDocument = (Document)document.get("permissions");
-        Permissions permissions = null;
-        if (permissionDocument != null) {
-            permissions = asPermissions(permissionDocument);
-        }
-
         @SuppressWarnings("unchecked")//components is always list
         List<Document> componentDocument = (List<Document>)document.get("components");
         List<StackComponent> components = componentDocument.stream()
@@ -112,7 +97,6 @@ public class StackImplCodec implements Codec<StackImpl> {
                         .setSource(source)
                         .setComponents(components)
                         .setStackIcon(stackIcon)
-                        .setPermissions(permissions)
                         .build();
     }
 
@@ -144,11 +128,6 @@ public class StackImplCodec implements Codec<StackImpl> {
         StackIcon stackIcon = stack.getStackIcon();
         if (stackIcon != null) {
             document.append("stackIcon", asDocument(stackIcon));
-        }
-
-        Permissions permissions = stack.getPermissions();
-        if (permissions != null) {
-            document.append("permissions", asDocument(permissions));
         }
 
         codec.encode(writer, document, encoderContext);
@@ -183,38 +162,5 @@ public class StackImplCodec implements Codec<StackImpl> {
 
     private static StackSource asStackSource(Document document) {
         return new StackSourceImpl(document.getString("type"), document.getString("origin"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Permissions asPermissions(Document document) {
-        Map<String, List<String>> users = new HashMap<>();
-        for (Document userDocument : (List<Document>)document.get("users")) {
-            String key = userDocument.getString("name");
-            List<String> value = (List<String>)userDocument.get("value");
-            users.put(key, value);
-        }
-
-        List<Document> groupDocuments = (List<Document>)document.get("groups");
-        List<Group> groups = groupDocuments.stream().map(StackImplCodec::asGroup).collect(Collectors.toList());
-
-        return new PermissionsImpl(users, groups);
-    }
-
-    private static Document asDocument(Permissions permissions) {
-        List<Document> groups = permissions.getGroups().stream().map(StackImplCodec::asDocument).collect(toList());
-        return new Document().append("groups", groups)
-                             .append("users", mapAsDocumentsList(permissions.getUsers()));
-    }
-
-    private static Group asGroup(Document document) {
-        @SuppressWarnings("unchecked")//acl is always String list
-        List<String> acls = document.get("acl") == null ? Collections.emptyList() : (List<String>)document.get("acl");
-        return new GroupImpl(document.getString("name"), document.getString("unit"), acls);
-    }
-
-    private static Document asDocument(Group group) {
-        return new Document().append("name", group.getName())
-                             .append("unit", group.getUnit())
-                             .append("acl", asDBList(group.getAcl()));
     }
 }

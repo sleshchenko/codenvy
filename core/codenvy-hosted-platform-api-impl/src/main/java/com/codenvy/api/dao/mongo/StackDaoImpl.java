@@ -14,24 +14,26 @@
  */
 package com.codenvy.api.dao.mongo;
 
+import com.codenvy.api.dao.mongo.util.StackAcl;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
-
 import com.mongodb.MongoException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 
 import org.bson.conversions.Bson;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
+import org.eclipse.che.api.workspace.server.model.AclImpl;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackImpl;
-import org.eclipse.che.commons.annotation.Nullable;
 import org.eclipse.che.api.workspace.server.spi.StackDao;
+import org.eclipse.che.commons.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +49,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation mongo storage for {@link StackImpl}
- *
+ * <p>
  * <p>Stack collection document scheme:
  * <pre>
  * {
@@ -197,12 +199,14 @@ import static java.util.Objects.requireNonNull;
 public class StackDaoImpl implements StackDao {
 
     private final MongoCollection<StackImpl> collection;
+    private final MongoCollection<StackAcl>  acls;
 
     @Inject
     public StackDaoImpl(@Named("mongo.db.organization") MongoDatabase mongoDatabase,
                         @Named("organization.storage.db.stacks.collection") String collectionName) {
         collection = mongoDatabase.getCollection(collectionName, StackImpl.class);
         collection.createIndex(new BasicDBObject("creator", 1));
+        this.acls = mongoDatabase.getCollection("organization.storage.db.stacks.acl.collection", StackAcl.class);
     }
 
     @Override
@@ -274,6 +278,56 @@ public class StackDaoImpl implements StackDao {
         } catch (MongoException mongoEx) {
             throw new ServerException("Impossible to retrieve stacks. ", mongoEx);
         }
+    }
+
+    @Override
+    public void storeACL(String stack, AclImpl acl) throws ServerException {
+        try {
+            acls.replaceOne(and(eq("stack", stack),
+                                eq("user", acl.getUser())),
+                            new StackAcl(stack, acl),
+                            new UpdateOptions().upsert(true));
+        } catch (MongoException e) {
+            throw new ServerException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void removeACL(String stack, String user) throws ServerException {
+        try {
+            acls.deleteOne(and(eq("stack", stack),
+                               eq("user", user)));
+        } catch (MongoException e) {
+            throw new ServerException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<AclImpl> getACLs(String stack) throws ServerException {
+        try {
+            return acls.find(eq("stack", stack))
+                       .into(new ArrayList<>());
+        } catch (MongoException e) {
+            throw new ServerException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public AclImpl getACL(String stack, String user) throws ServerException, NotFoundException {
+        AclImpl found;
+        try {
+            found = acls.find(and(eq("stack", stack),
+                                  eq("user", user)))
+                        .first();
+        } catch (MongoException e) {
+            throw new ServerException(e.getMessage(), e);
+        }
+
+        if (found == null) {
+            throw new NotFoundException("NOT FOUND");
+        }
+
+        return found;
     }
 }
 

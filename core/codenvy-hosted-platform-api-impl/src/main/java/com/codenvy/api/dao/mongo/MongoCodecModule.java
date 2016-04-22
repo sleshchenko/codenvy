@@ -24,6 +24,7 @@ import org.bson.codecs.Codec;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.eclipse.che.api.machine.server.model.impl.SnapshotImpl;
+import org.eclipse.che.api.machine.server.recipe.RecipeImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackImpl;
 import org.eclipse.che.inject.DynaModule;
@@ -59,6 +60,8 @@ public class MongoCodecModule extends AbstractModule {
                     return (Codec<T>)new StackImplCodec(registry);
                 } else if (clazz == WorkerImpl.class) {
                     return (Codec<T>)new WorkerImplCodec(registry);
+                } else if (clazz == RecipeImpl.class) {
+                    return (Codec<T>)new RecipeImplCodec(registry);
                 }
                 return null;
             }
