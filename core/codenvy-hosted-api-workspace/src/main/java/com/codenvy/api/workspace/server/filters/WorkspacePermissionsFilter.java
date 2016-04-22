@@ -61,7 +61,9 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
     }
 
     @Override
-    public void filter(GenericMethodResource genericMethodResource, Object[] arguments) throws ForbiddenException, ServerException {
+    public void filter(GenericMethodResource genericMethodResource, Object[] arguments) throws ForbiddenException,
+                                                                                               ServerException,
+                                                                                               NotFoundException {
         final String methodName = genericMethodResource.getMethod().getName();
 
         final User currentUser = EnvironmentContext.getCurrent().getUser();
@@ -110,12 +112,7 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
                 break;
 
             case "getByKey":
-                try {
-                    workspaceId = getWorkspaceFromKey(((String)arguments[0]));
-                } catch (NotFoundException e) {
-                    //Can't authorize operation
-                    throw new ServerException(e);
-                }
+                workspaceId = getWorkspaceFromKey(((String)arguments[0]));
                 action = WorkspaceAction.READ;
                 break;
 

@@ -12,35 +12,26 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.api.permission.shared;
-
-import java.util.List;
+package com.codenvy.api.workspace.server.recipe;
 
 /**
- * Represents users' permissions to access to some resources
- *
  * @author Sergii Leschenko
  */
-public interface Permissions {
-    /**
-     * Returns used id
-     *
-     * <p>Note: also supported '*' for marking all users
-     */
-    String getUser();
+public enum RecipeAction {
+    SET_PERMISSIONS("setPermissions"),
+    READ_PERMISSIONS("readPermissions"),
+    READ("read"),
+    UPDATE("update"),
+    DELETE("delete");
 
-    /**
-     * Returns domain id
-     */
-    String getDomain();
+    private final String action;
 
-    /**
-     * Returns instance id
-     */
-    String getInstance();
+    RecipeAction(String action) {
+        this.action = action;
+    }
 
-    /**
-     * List of actions which user can perform for particular instance
-     */
-    List<String> getActions();
+    @Override
+    public String toString() {
+        return action;
+    }
 }

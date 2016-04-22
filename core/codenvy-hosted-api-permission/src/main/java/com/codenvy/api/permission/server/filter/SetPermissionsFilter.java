@@ -46,6 +46,12 @@ public class SetPermissionsFilter extends CheMethodInvokerFilter {
                                                                          "setPermissions")) {
                 throw new ForbiddenException("User can't edit permissions for this instance");
             }
+
+            // User doesn't have ability to add public permissions by REST API
+            // For now it can be added only by admins by predefined stacks and recipes
+            if (permissions.getUser().equals("*")) {
+                throw new ForbiddenException("User can't set public permissions for this instance");
+            }
         }
     }
 }

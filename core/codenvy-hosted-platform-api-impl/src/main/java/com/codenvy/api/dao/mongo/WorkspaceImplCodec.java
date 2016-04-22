@@ -288,9 +288,6 @@ public class WorkspaceImplCodec implements Codec<WorkspaceImpl> {
     }
 
     public static WorkspaceConfigImpl asWorkspaceConfig(Document document) {
-        @SuppressWarnings("unchecked") // 'attributes' field is always list
-        final List<Document> attributes = (List<Document>)document.get("attributes");
-
         @SuppressWarnings("unchecked") // 'commands' field is always list
         final List<Document> commandDocuments = (List<Document>)document.get("commands");
         final List<CommandImpl> commands = commandDocuments.stream()

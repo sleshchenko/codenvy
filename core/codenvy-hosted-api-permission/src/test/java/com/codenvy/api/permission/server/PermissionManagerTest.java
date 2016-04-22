@@ -47,7 +47,7 @@ import static org.testng.Assert.assertTrue;
  *
  * @author Sergii Leschenko
  */
-@Listeners(value = {MockitoTestNGListener.class})
+@Listeners(MockitoTestNGListener.class)
 public class PermissionManagerTest {
     @Mock
     private PermissionsStorage permissionsStorage;
@@ -140,17 +140,6 @@ public class PermissionManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToGetPermissionsByUserAndDomain() throws Exception {
-        final PermissionsImpl permissions = new PermissionsImpl("user", "test", "test123", singletonList("read"));
-        when(permissionsStorage.get("user", "test")).thenReturn(singletonList(permissions));
-
-        final List<PermissionsImpl> fetchedPermissions = permissionManager.get("user", "test");
-
-        assertEquals(fetchedPermissions.size(), 1);
-        assertEquals(fetchedPermissions.get(0), permissions);
-    }
-
-    @Test
     public void shouldBeAbleToGetPermissionsByInstance() throws Exception {
         final PermissionsImpl firstPermissions = new PermissionsImpl("user", "test", "test123", singletonList("read"));
         final PermissionsImpl secondPermissions = new PermissionsImpl("user1", "test", "test123", singletonList("read"));
@@ -162,24 +151,6 @@ public class PermissionManagerTest {
         assertEquals(fetchedPermissions.size(), 2);
         assertTrue(fetchedPermissions.contains(firstPermissions));
         assertTrue(fetchedPermissions.contains(secondPermissions));
-    }
-
-
-    @Test
-    public void shouldBeAbleToGetPermissionsByUser() throws Exception {
-        PermissionsStorage anotherStorage = mock(PermissionsStorage.class);
-        when(anotherStorage.getDomains()).thenReturn(ImmutableSet.of(new PermissionsDomain("domain", ImmutableSet.of("read"))));
-        permissionManager = new PermissionManager(ImmutableSet.of(permissionsStorage, anotherStorage));
-
-        final PermissionsImpl firstPermissions = new PermissionsImpl("user", "domain", "domain123", singletonList("read"));
-        when(anotherStorage.get("user")).thenReturn(singletonList(firstPermissions));
-        final PermissionsImpl secondPermissions = new PermissionsImpl("user", "test", "test123", singletonList("read"));
-        when(permissionsStorage.get("user")).thenReturn(singletonList(secondPermissions));
-
-        final List<PermissionsImpl> permissions = permissionManager.get("user");
-        assertEquals(permissions.size(), 2);
-        assertTrue(permissions.contains(firstPermissions));
-        assertTrue(permissions.contains(secondPermissions));
     }
 
     @Test
@@ -211,12 +182,6 @@ public class PermissionManagerTest {
           expectedExceptionsMessageRegExp = "Requested unsupported domain 'unsupported'")
     public void shouldThrowExceptionWhenRequestedUnsupportedDomain() throws Exception {
         permissionManager.getDomainsActions("unsupported");
-    }
-
-    @Test(expectedExceptions = NotFoundException.class,
-          expectedExceptionsMessageRegExp = "Requested unsupported domain 'unsupported'")
-    public void shouldThrowExceptionWhenRequestedUnsupportedDomainOnGettingPermissions() throws Exception {
-        permissionManager.get("user", "unsupported");
     }
 
     public class TestDomain extends PermissionsDomain {

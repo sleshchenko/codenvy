@@ -49,27 +49,7 @@ public interface PermissionsStorage {
      * @throws ServerException
      *         when any other error occurs during permissions storing
      */
-    void store(PermissionsImpl permissions) throws ServerException;
-
-    /**
-     * @param user
-     *         user id
-     * @return set of permissions
-     * @throws ServerException
-     *         when any other error occurs during permissions fetching
-     */
-    List<PermissionsImpl> get(String user) throws ServerException;
-
-    /**
-     * @param user
-     *         user id
-     * @param domain
-     *         domain id
-     * @return set of permissions
-     * @throws ServerException
-     *         when any other error occurs during permissions fetching
-     */
-    List<PermissionsImpl> get(String user, String domain) throws ServerException;
+    void store(PermissionsImpl permissions) throws ServerException, NotFoundException;
 
     /**
      * @param user
@@ -95,7 +75,7 @@ public interface PermissionsStorage {
      * @throws ServerException
      *         when any other error occurs during permissions fetching
      */
-    List<PermissionsImpl> getByInstance(String domain, String instance) throws ServerException;
+    List<PermissionsImpl> getByInstance(String domain, String instance) throws ServerException, NotFoundException;
 
     /**
      * @param user
@@ -124,5 +104,5 @@ public interface PermissionsStorage {
      * @throws ServerException
      *         when any other error occurs during permissions removing
      */
-    void remove(String user, String domain, String instance) throws ServerException;
+    void remove(String user, String domain, String instance) throws ServerException, NotFoundException;
 }

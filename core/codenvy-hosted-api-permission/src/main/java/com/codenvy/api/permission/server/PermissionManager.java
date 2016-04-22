@@ -23,11 +23,11 @@ import org.eclipse.che.api.core.ServerException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Facade for Permissions related operations.
@@ -80,6 +80,18 @@ public class PermissionManager {
             && userHasLastSetPermissions(permissionsStorage, user, domain, instance)) {
             throw new ConflictException("Can't edit permissions because there is not any another user with permission 'setPermissions'");
         }
+
+        final Set<String> allowedActions = getDomainsActions(permissions.getDomain());
+        final Set<String> unsupportedActions = permissions.getActions()
+                                                          .stream()
+                                                          .filter(action -> !allowedActions.contains(action))
+                                                          .collect(Collectors.toSet());
+        if (!unsupportedActions.isEmpty()) {
+            throw new ConflictException("Domain with id '" + permissions.getDomain() + "' doesn't support next action(s): " +
+                                        unsupportedActions.stream()
+                                                          .collect(Collectors.joining(", ")));
+        }
+
         permissionsStorage.store(permissions);
     }
 
@@ -115,36 +127,6 @@ public class PermissionManager {
      */
     public List<PermissionsImpl> getByInstance(String domain, String instance) throws ServerException, NotFoundException {
         return getPermissionsStorage(domain).getByInstance(domain, instance);
-    }
-
-    /**
-     * @param user
-     *         user id
-     * @return set of permissions
-     * @throws ServerException
-     *         when any other error occurs during permissions fetching
-     */
-    public List<PermissionsImpl> get(String user) throws ServerException {
-        List<PermissionsImpl> result = new ArrayList<>();
-        for (PermissionsStorage permissionsStorage : domainToStorage.values()) {
-            result.addAll(permissionsStorage.get(user));
-        }
-        return result;
-    }
-
-    /**
-     * @param user
-     *         user id
-     * @param domain
-     *         domain id
-     * @return set of permissions
-     * @throws NotFoundException
-     *         when given domain is unsupported
-     * @throws ServerException
-     *         when any other error occurs during permissions fetching
-     */
-    public List<PermissionsImpl> get(String user, String domain) throws ServerException, NotFoundException {
-        return getPermissionsStorage(domain).get(user, domain);
     }
 
     /**
@@ -187,7 +169,8 @@ public class PermissionManager {
      *         when any other error occurs during permission existence checking
      */
     public boolean exists(String user, String domain, String instance, String action) throws ServerException, NotFoundException {
-        return getPermissionsStorage(domain).exists(user, domain, instance, action);
+        return getDomainsActions(domain).contains(action)
+               && getPermissionsStorage(domain).exists(user, domain, instance, action);
     }
 
     /**
@@ -221,10 +204,14 @@ public class PermissionManager {
 
     private boolean userHasLastSetPermissions(PermissionsStorage permissionsStorage, String user, String domain, String instance)
             throws ServerException, ConflictException {
-        return permissionsStorage.exists(user, domain, instance, "setPermissions")
-               && !permissionsStorage.getByInstance(domain, instance)
-                                     .stream()
-                                     .anyMatch(permission -> !permission.getUser().equals(user)
-                                                             && permission.getActions().contains("setPermissions"));
+        try {
+            return permissionsStorage.exists(user, domain, instance, "setPermissions")
+                   && !permissionsStorage.getByInstance(domain, instance)
+                                         .stream()
+                                         .anyMatch(permission -> !permission.getUser().equals(user)
+                                                                 && permission.getActions().contains("setPermissions"));
+        } catch (NotFoundException e) {
+            return true;
+        }
     }
 }

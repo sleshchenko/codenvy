@@ -12,13 +12,13 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.api.dao.mongo;
+package com.codenvy.api.dao.mongo.stack;
 
+import com.codenvy.api.workspace.server.stack.StackAction;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
-
 import com.mongodb.MongoException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.client.FindIterable;
@@ -30,8 +30,8 @@ import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackImpl;
-import org.eclipse.che.commons.annotation.Nullable;
 import org.eclipse.che.api.workspace.server.spi.StackDao;
+import org.eclipse.che.commons.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +42,7 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.elemMatch;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Filters.or;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -172,18 +173,12 @@ import static java.util.Objects.requireNonNull;
  *    "type": "image",
  *    "origin": "codenvy/ubuntu_jdk8"
  *  },
- *  "permissions": {
- *    "groups": [
- *      {
- *        "acl": [
- *          "read",
- *          "search"
- *        ],
- *        "name": "public"
- *      }
- *    ],
- *    "users": {}
- *  },
+ *  "acl" : [
+ *     {
+ *         "user" : "user12345...",
+ *         "actions" : [ "read", "delete"]
+ *     }
+ *  ],
  *  "stackIcon": {
  *    "name": "type-java.svg",
  *    "mediaType": "image/svg+xml"
@@ -234,39 +229,37 @@ public class StackDaoImpl implements StackDao {
     }
 
     @Override
-    public void update(StackImpl update) throws NotFoundException, ServerException {
+    public StackImpl update(StackImpl update) throws NotFoundException, ServerException {
         requireNonNull(update, "Stack for updating required");
         requireNonNull(update.getId(), "Stack id required");
         try {
-            if (collection.findOneAndReplace(eq("_id", update.getId()), update) == null) {
+            if (update.getAcl() == null) {
+                StackImpl byId = getById(update.getId());
+                update.setAcl(byId.getAcl());
+            }
+
+            StackImpl updatedStack = collection.findOneAndReplace(eq("_id", update.getId()), update);
+            if (updatedStack == null) {
                 throw new NotFoundException(format("Stack with id '%s' was not found", update.getId()));
             }
+            return updatedStack;
         } catch (MongoException mongoEx) {
             throw new ServerException(mongoEx.getMessage(), mongoEx);
         }
     }
 
     @Override
-    public List<StackImpl> getByCreator(String creator, int skipCount, int maxItems) throws ServerException {
-        requireNonNull(creator, "Creator required");
-        try {
-            return collection.find(eq("creator", creator))
-                             .skip(skipCount)
-                             .limit(maxItems)
-                             .into(new ArrayList<>());
-        } catch (MongoException mongoEx) {
-            throw new ServerException("Impossible to retrieve stacks. ", mongoEx);
-        }
-    }
+    public List<StackImpl> searchStacks(String user, @Nullable List<String> tags, int skipCount, int maxItems) throws ServerException {
+        requireNonNull(user, "User id required");
 
-    @Override
-    public List<StackImpl> searchStacks(@Nullable List<String> tags, int skipCount, int maxItems) throws ServerException {
         try {
-            Bson query = elemMatch("permissions.groups", and(in("acl", "search"), eq("name", "public")));
+            Bson query = elemMatch("acl", and(in("actions", StackAction.READ.toString()),
+                                              or(eq("user", "*"),
+                                                 eq("user", user))));
             if (tags != null && !tags.isEmpty()) {
-                Bson tagQuery = all("tags", tags);
-                query = and(query, tagQuery);
+                query = and(query, all("tags", tags));
             }
+
             return collection.find(query)
                              .skip(skipCount)
                              .limit(maxItems)
@@ -276,4 +269,3 @@ public class StackDaoImpl implements StackDao {
         }
     }
 }
-

@@ -66,38 +66,6 @@ public class WorkspacePermissionStorageTest {
     }
 
     @Test
-    public void shouldBeAbleToGetPermissionsByUser() throws Exception {
-        when(workerDao.getWorkersByUser(anyString()))
-                .thenReturn(Collections.singletonList(new WorkerImpl("user123", "workspace123", Arrays.asList(WorkspaceAction.READ,
-                                                                                                              WorkspaceAction.USE))));
-
-        List<PermissionsImpl> result = permissionStorage.get("user123");
-
-        verify(workerDao).getWorkersByUser(eq("user123"));
-        assertEquals(result.size(), 1);
-        assertEquals(result.get(0), new PermissionsImpl("user123",
-                                                        "workspace",
-                                                        "workspace123",
-                                                        Arrays.asList("read", "use")));
-    }
-
-    @Test
-    public void shouldBeAbleToGetPermissionsByUserAndDomain() throws Exception {
-        when(workerDao.getWorkersByUser(anyString()))
-                .thenReturn(Collections.singletonList(new WorkerImpl("user123", "workspace123", Arrays.asList(WorkspaceAction.READ,
-                                                                                                              WorkspaceAction.USE))));
-
-        List<PermissionsImpl> result = permissionStorage.get("user123", DOMAIN_ID);
-
-        assertEquals(result.size(), 1);
-        verify(workerDao).getWorkersByUser(eq("user123"));
-        assertEquals(result.get(0), new PermissionsImpl("user123",
-                                                        "workspace",
-                                                        "workspace123",
-                                                        Arrays.asList("read", "use")));
-    }
-
-    @Test
     public void shouldBeAbleToGetPermissionsByUserAndDomainAndInstance() throws Exception {
         when(workerDao.getWorker(anyString(), anyString()))
                 .thenReturn(new WorkerImpl("user123", "workspace123", Arrays.asList(WorkspaceAction.READ,

@@ -47,7 +47,7 @@ public class WorkspacePermissionStorage implements PermissionsStorage {
     private final WorkerDao workerDao;
 
     @Inject
-    public WorkspacePermissionStorage(WorkerDao workerDao) throws IOException {
+    public WorkspacePermissionStorage(WorkerDao workerDao) {
         this.workerDao = workerDao;
     }
 
@@ -64,16 +64,6 @@ public class WorkspacePermissionStorage implements PermissionsStorage {
                                                   .stream()
                                                   .map(WorkspaceAction::getAction)
                                                   .collect(Collectors.toList())));
-    }
-
-    @Override
-    public List<PermissionsImpl> get(String user) throws ServerException {
-        return toPermissions(workerDao.getWorkersByUser(user));
-    }
-
-    @Override
-    public List<PermissionsImpl> get(String user, String domain) throws ServerException {
-        return toPermissions(workerDao.getWorkersByUser(user));
     }
 
     @Override

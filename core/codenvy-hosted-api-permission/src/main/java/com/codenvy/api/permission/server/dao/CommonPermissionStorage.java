@@ -25,7 +25,6 @@ import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
 
 import org.bson.Document;
-import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 
@@ -38,7 +37,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -100,23 +98,6 @@ public class CommonPermissionStorage implements PermissionsStorage {
 
     @Override
     public void store(PermissionsImpl permissions) throws ServerException {
-        final PermissionsDomain permissionsDomain = idToDomain.get(permissions.getDomain());
-        if (permissionsDomain == null) {
-            throw new IllegalArgumentException("Storage doesn't support domain with id '" + permissions.getDomain() + "'");
-        }
-
-        final Set<String> allowedActions = permissionsDomain.getAllowedActions();
-        final Set<String> unsupportedActions = permissions.getActions()
-                                                          .stream()
-                                                          .filter(action -> !allowedActions.contains(action))
-                                                          .collect(Collectors.toSet());
-        if (!unsupportedActions.isEmpty()) {
-            throw new IllegalArgumentException("Domain with id '" + permissions.getDomain() + "' doesn't support next action(s): " +
-                                               unsupportedActions.stream()
-                                                                 .collect(Collectors.joining(", ")));
-        }
-
-
         try {
             collection.replaceOne(and(eq("user", permissions.getUser()),
                                       eq("domain", permissions.getDomain()),
@@ -134,27 +115,6 @@ public class CommonPermissionStorage implements PermissionsStorage {
             collection.deleteOne(and(eq("user", user),
                                      eq("domain", domain),
                                      eq("instance", instance)));
-        } catch (MongoException e) {
-            throw new ServerException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public List<PermissionsImpl> get(String user) throws ServerException {
-        try {
-            return collection.find(eq("user", user))
-                             .into(new ArrayList<>());
-        } catch (MongoException e) {
-            throw new ServerException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public List<PermissionsImpl> get(String user, String domain) throws ServerException {
-        try {
-            return collection.find(and(eq("user", user),
-                                       eq("domain", domain)))
-                             .into(new ArrayList<>());
         } catch (MongoException e) {
             throw new ServerException(e.getMessage(), e);
         }

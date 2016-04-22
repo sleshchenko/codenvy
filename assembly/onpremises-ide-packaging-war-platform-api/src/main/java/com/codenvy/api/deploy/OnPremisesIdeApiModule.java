@@ -21,7 +21,6 @@ import com.codenvy.api.dao.ldap.UserDaoImpl;
 import com.codenvy.api.dao.mongo.AccountDaoImpl;
 import com.codenvy.api.dao.mongo.MachineMongoDatabaseProvider;
 import com.codenvy.api.dao.mongo.OrganizationMongoDatabaseProvider;
-import com.codenvy.api.dao.mongo.RecipeDaoImpl;
 import com.codenvy.api.dao.mongo.WorkspaceDaoImpl;
 import com.codenvy.api.dao.util.ProfileMigrator;
 import com.codenvy.api.factory.FactoryMongoDatabaseProvider;
@@ -62,8 +61,6 @@ import org.eclipse.che.api.factory.server.FactoryCreateValidator;
 import org.eclipse.che.api.factory.server.FactoryEditValidator;
 import org.eclipse.che.api.factory.server.FactoryService;
 import org.eclipse.che.api.machine.server.dao.RecipeDao;
-import org.eclipse.che.api.machine.server.recipe.PermissionsChecker;
-import org.eclipse.che.api.machine.server.recipe.PermissionsCheckerImpl;
 import org.eclipse.che.api.machine.server.recipe.RecipeLoader;
 import org.eclipse.che.api.machine.server.recipe.RecipeService;
 import org.eclipse.che.api.machine.server.recipe.providers.RecipeProvider;
@@ -84,7 +81,10 @@ import org.eclipse.che.api.workspace.server.WorkspaceManager;
 import org.eclipse.che.api.workspace.server.WorkspaceService;
 import org.eclipse.che.api.workspace.server.WorkspaceValidator;
 import org.eclipse.che.api.workspace.server.event.WorkspaceMessenger;
+import org.eclipse.che.api.workspace.server.spi.StackDao;
 import org.eclipse.che.api.workspace.server.spi.WorkspaceDao;
+import org.eclipse.che.api.workspace.server.stack.StackLoader;
+import org.eclipse.che.api.workspace.server.stack.StackService;
 import org.eclipse.che.commons.schedule.executor.ScheduleModule;
 import org.eclipse.che.everrest.CheAsynchronousJobPool;
 import org.eclipse.che.everrest.ETagResponseFilter;
@@ -122,7 +122,6 @@ public class OnPremisesIdeApiModule extends AbstractModule {
 
         //recipe service
         bind(RecipeService.class);
-        bind(PermissionsChecker.class).to(PermissionsCheckerImpl.class);
 
         bind(AsynchronousJobPool.class).to(CheAsynchronousJobPool.class);
         bind(ServiceBindingHelper.bindingKey(AsynchronousJobService.class, "/async/{ws-id}")).to(AsynchronousJobService.class);
@@ -177,15 +176,15 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         bind(WorkerDao.class).to(com.codenvy.api.dao.mongo.WorkerDaoImpl.class);
         bind(AccountDao.class).to(AccountDaoImpl.class);
         bind(org.eclipse.che.api.auth.AuthenticationDao.class).to(com.codenvy.api.dao.authentication.AuthenticationDaoImpl.class);
-        bind(RecipeDao.class).to(RecipeDaoImpl.class);
+        bind(RecipeDao.class).to(com.codenvy.api.dao.mongo.recipe.RecipeDaoImpl.class);
         bind(RecipeLoader.class);
         Multibinder<String> recipeBinder = Multibinder.newSetBinder(binder(), String.class, Names.named("predefined.recipe.path"));
         recipeBinder.addBinding().toProvider(RecipeProvider.class);
         recipeBinder.addBinding().toInstance("predefined-recipes.json");
 
-        bind(org.eclipse.che.api.workspace.server.stack.StackService.class);
-        bind(org.eclipse.che.api.workspace.server.spi.StackDao.class).to(com.codenvy.api.dao.mongo.StackDaoImpl.class);
-        bind(org.eclipse.che.api.workspace.server.stack.StackLoader.class);
+        bind(StackService.class);
+        bind(StackLoader.class);
+        bind(StackDao.class).to(com.codenvy.api.dao.mongo.stack.StackDaoImpl.class);
 
         bind(WorkspaceValidator.class).to(org.eclipse.che.api.workspace.server.DefaultWorkspaceValidator.class);
         bind(WorkspaceManager.class).to(com.codenvy.api.workspace.LimitsCheckingWorkspaceManager.class);

@@ -54,7 +54,7 @@ import static org.testng.Assert.assertEquals;
  *
  * @author Sergii Leschenko
  */
-@Listeners(value = {MockitoTestNGListener.class})
+@Listeners(MockitoTestNGListener.class)
 public class CommonPermissionStorageTest {
 
     private MongoCollection<PermissionsImpl> collection;
@@ -153,44 +153,6 @@ public class CommonPermissionStorageTest {
         final MongoDatabase db = mockDatabase(col -> doThrow(mock(MongoException.class)).when(col).deleteOne(any()));
 
         new CommonPermissionStorage(db, "permissions", ImmutableSet.of(new TestDomain())).remove("user", "test", "test123");
-    }
-
-    @Test
-    public void shouldBeAbleToGetPermissionsByUser() throws Exception {
-        final PermissionsImpl permissions = createPermissions();
-        collection.insertOne(permissions);
-        collection.insertOne(new PermissionsImpl("anotherUser", "test", "test123", singletonList("read")));
-
-        List<PermissionsImpl> result = permissionStorage.get(permissions.getUser());
-
-        assertEquals(result.size(), 1);
-        assertEquals(result.get(0), permissions);
-    }
-
-    @Test(expectedExceptions = ServerException.class)
-    public void shouldThrowServerExceptionWhenMongoExceptionWasThrewOnGettingPermissionsByUser() throws Exception {
-        final MongoDatabase db = mockDatabase(col -> doThrow(mock(MongoException.class)).when(col).find((Bson)any()));
-
-        new CommonPermissionStorage(db, "permissions", ImmutableSet.of(new TestDomain())).get("user");
-    }
-
-    @Test
-    public void shouldBeAbleToGetPermissionsByUserAndDomain() throws Exception {
-        final PermissionsImpl permissions = createPermissions();
-        collection.insertOne(permissions);
-        collection.insertOne(new PermissionsImpl("user", "anotherDomain", "test123", singletonList("read")));
-
-        final List<PermissionsImpl> result = permissionStorage.get(permissions.getUser(), permissions.getDomain());
-
-        assertEquals(result.size(), 1);
-        assertEquals(result.get(0), permissions);
-    }
-
-    @Test(expectedExceptions = ServerException.class)
-    public void shouldThrowServerExceptionWhenMongoExceptionWasThrewOnGettingPermissionsByUserAndDomain() throws Exception {
-        final MongoDatabase db = mockDatabase(col -> doThrow(mock(MongoException.class)).when(col).find((Bson)any()));
-
-        new CommonPermissionStorage(db, "permissions", ImmutableSet.of(new TestDomain())).get("user", "domain");
     }
 
     @Test
