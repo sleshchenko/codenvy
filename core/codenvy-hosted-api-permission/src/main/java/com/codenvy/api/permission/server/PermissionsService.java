@@ -84,7 +84,8 @@ public class PermissionsService extends Service {
      */
     @POST
     @Consumes(APPLICATION_JSON)
-    public void storePermissions(PermissionsDto permissionsDto) throws ServerException, BadRequestException, ConflictException {
+    public void storePermissions(PermissionsDto permissionsDto)
+            throws ServerException, BadRequestException, ConflictException, NotFoundException {
         checkArgument(permissionsDto != null, "Permissions descriptor required");
         checkArgument(!isNullOrEmpty(permissionsDto.getUser()), "User required");
         checkArgument(!isNullOrEmpty(permissionsDto.getDomain()), "Domain required");
@@ -125,7 +126,8 @@ public class PermissionsService extends Service {
     @Path("/{domain}/{instance}/list")
     public List<PermissionsDto> getUsersPermissionsByInstance(@PathParam("domain") String domain,
                                                               @PathParam("instance") String instance) throws ServerException,
-                                                                                                             ConflictException {
+                                                                                                             ConflictException,
+                                                                                                             NotFoundException {
         return permissionManager.getByInstance(domain, instance)
                                 .stream()
                                 .map(this::toDto)

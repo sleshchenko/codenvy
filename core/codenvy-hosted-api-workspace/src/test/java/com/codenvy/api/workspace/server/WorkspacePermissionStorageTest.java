@@ -64,7 +64,7 @@ public class WorkspacePermissionStorageTest {
         verify(workerDao).store(eq(new WorkerImpl("user123", "workspace123", Arrays.asList(WorkspaceAction.READ,
                                                                                            WorkspaceAction.USE))));
     }
-
+/*
     @Test
     public void shouldBeAbleToGetPermissionsByUser() throws Exception {
         when(workerDao.getWorkersByUser(anyString()))
@@ -96,7 +96,7 @@ public class WorkspacePermissionStorageTest {
                                                         "workspace123",
                                                         Arrays.asList("read", "use")));
     }
-
+*/
     @Test
     public void shouldBeAbleToGetPermissionsByUserAndDomainAndInstance() throws Exception {
         when(workerDao.getWorker(anyString(), anyString()))

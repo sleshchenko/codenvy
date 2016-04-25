@@ -138,27 +138,6 @@ public class CommonPermissionStorage implements PermissionsStorage {
     }
 
     @Override
-    public List<PermissionsImpl> get(String user) throws ServerException {
-        try {
-            return collection.find(eq("user", user))
-                             .into(new ArrayList<>());
-        } catch (MongoException e) {
-            throw new ServerException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public List<PermissionsImpl> get(String user, String domain) throws ServerException {
-        try {
-            return collection.find(and(eq("user", user),
-                                       eq("domain", domain)))
-                             .into(new ArrayList<>());
-        } catch (MongoException e) {
-            throw new ServerException(e.getMessage(), e);
-        }
-    }
-
-    @Override
     public PermissionsImpl get(String user, String domain, String instance) throws ServerException, NotFoundException {
         PermissionsImpl found;
         try {

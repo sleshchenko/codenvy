@@ -154,7 +154,7 @@ public class CommonPermissionStorageTest {
 
         new CommonPermissionStorage(db, "permissions", ImmutableSet.of(new TestDomain())).remove("user", "test", "test123");
     }
-
+/*
     @Test
     public void shouldBeAbleToGetPermissionsByUser() throws Exception {
         final PermissionsImpl permissions = createPermissions();
@@ -192,7 +192,7 @@ public class CommonPermissionStorageTest {
 
         new CommonPermissionStorage(db, "permissions", ImmutableSet.of(new TestDomain())).get("user", "domain");
     }
-
+*/
     @Test
     public void shouldBeAbleToGetPermissionsByInstance() throws Exception {
         final PermissionsImpl permissions = createPermissions();

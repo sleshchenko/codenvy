@@ -65,7 +65,7 @@ public class PermissionManager {
      * @throws ServerException
      *         when any other error occurs during permissions storing
      */
-    public void storePermission(PermissionsImpl permissions) throws ServerException, ConflictException {
+    public void storePermission(PermissionsImpl permissions) throws ServerException, ConflictException, NotFoundException {
         final String domain = permissions.getDomain();
         final String instance = permissions.getInstance();
         final String user = permissions.getUser();
@@ -108,38 +108,9 @@ public class PermissionManager {
      * @throws ServerException
      *         when any other error occurs during permissions fetching
      */
-    public List<PermissionsImpl> getByInstance(String domain, String instance) throws ServerException, ConflictException {
+    public List<PermissionsImpl> getByInstance(String domain, String instance) throws ServerException, ConflictException,
+                                                                                      NotFoundException {
         return getPermissionsStorage(domain).getByInstance(domain, instance);
-    }
-
-    /**
-     * @param user
-     *         user id
-     * @return set of permissions
-     * @throws ServerException
-     *         when any other error occurs during permissions fetching
-     */
-    public List<PermissionsImpl> get(String user) throws ServerException {
-        List<PermissionsImpl> result = new ArrayList<>();
-        for (PermissionsStorage permissionsStorage : domainToStorage.values()) {
-            result.addAll(permissionsStorage.get(user));
-        }
-        return result;
-    }
-
-    /**
-     * @param user
-     *         user id
-     * @param domain
-     *         domain id
-     * @return set of permissions
-     * @throws ConflictException
-     *         when given domain is unsupported
-     * @throws ServerException
-     *         when any other error occurs during permissions fetching
-     */
-    public List<PermissionsImpl> get(String user, String domain) throws ServerException, ConflictException {
-        return getPermissionsStorage(domain).get(user, domain);
     }
 
     /**
@@ -216,10 +187,14 @@ public class PermissionManager {
 
     private boolean userHasLastSetPermissions(PermissionsStorage permissionsStorage, String user, String domain, String instance)
             throws ServerException, ConflictException {
-        return permissionsStorage.exists(user, domain, instance, "setPermissions")
-               && !permissionsStorage.getByInstance(domain, instance)
-                                     .stream()
-                                     .anyMatch(permission -> !permission.getUser().equals(user)
-                                                             && permission.getActions().contains("setPermissions"));
+        try {
+            return permissionsStorage.exists(user, domain, instance, "setPermissions")
+                   && !permissionsStorage.getByInstance(domain, instance)
+                                         .stream()
+                                         .anyMatch(permission -> !permission.getUser().equals(user)
+                                                                 && permission.getActions().contains("setPermissions"));
+        } catch (NotFoundException e) {
+            return true;
+        }
     }
 }

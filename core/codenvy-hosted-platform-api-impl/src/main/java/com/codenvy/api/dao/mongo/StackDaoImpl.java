@@ -15,6 +15,7 @@
 package com.codenvy.api.dao.mongo;
 
 import com.codenvy.api.dao.mongo.util.StackAcl;
+import com.codenvy.api.workspace.server.stack.StackAction;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -30,7 +31,7 @@ import org.bson.conversions.Bson;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.workspace.server.model.AclImpl;
+import org.eclipse.che.api.core.acl.AclEntryImpl;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackImpl;
 import org.eclipse.che.api.workspace.server.spi.StackDao;
 import org.eclipse.che.commons.annotation.Nullable;
@@ -44,6 +45,7 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.elemMatch;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Filters.or;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -206,7 +208,8 @@ public class StackDaoImpl implements StackDao {
                         @Named("organization.storage.db.stacks.collection") String collectionName) {
         collection = mongoDatabase.getCollection(collectionName, StackImpl.class);
         collection.createIndex(new BasicDBObject("creator", 1));
-        this.acls = mongoDatabase.getCollection("organization.storage.db.stacks.acl.collection", StackAcl.class);
+        //"organization.storage.db.stacks.acl.collection"
+        this.acls = mongoDatabase.getCollection("stackAcls", StackAcl.class);
     }
 
     @Override
@@ -266,22 +269,41 @@ public class StackDaoImpl implements StackDao {
     @Override
     public List<StackImpl> searchStacks(@Nullable List<String> tags, int skipCount, int maxItems) throws ServerException {
         try {
-            Bson query = elemMatch("permissions.groups", and(in("acl", "search"), eq("name", "public")));
+            final Bson aclQuery = and(elemMatch("actions", in(StackAction.SEARCH.toString())),
+                                      or(eq("user", "*"),
+                                         eq("user", "user123")));
+
+            final ArrayList<StackAcl> aclsResult = acls.find(aclQuery)
+                                                       .into(new ArrayList<>());
+
+            Bson tagQuery = null;
             if (tags != null && !tags.isEmpty()) {
-                Bson tagQuery = all("tags", tags);
-                query = and(query, tagQuery);
+                tagQuery = all("tags", tags);
             }
-            return collection.find(query)
-                             .skip(skipCount)
-                             .limit(maxItems)
-                             .into(new ArrayList<>());
+
+            List<StackImpl> result = new ArrayList<>();
+            for (StackAcl stackAcl : aclsResult) {
+                if (tags != null && !tags.isEmpty()) {
+                    Bson query = eq("id", stackAcl.getStack());
+                    if (tagQuery != null) {
+                        query = and(query, tagQuery);
+                    }
+                    final StackImpl found = collection.find(query)
+                                                      .first();
+                    if (found != null) {
+                        result.add(found);
+                    }
+                }
+            }
+
+            return result;
         } catch (MongoException mongoEx) {
             throw new ServerException("Impossible to retrieve stacks. ", mongoEx);
         }
     }
 
     @Override
-    public void storeACL(String stack, AclImpl acl) throws ServerException {
+    public void storeACL(String stack, AclEntryImpl acl) throws ServerException {
         try {
             acls.replaceOne(and(eq("stack", stack),
                                 eq("user", acl.getUser())),
@@ -303,7 +325,7 @@ public class StackDaoImpl implements StackDao {
     }
 
     @Override
-    public List<AclImpl> getACLs(String stack) throws ServerException {
+    public List<AclEntryImpl> getACLs(String stack) throws ServerException {
         try {
             return acls.find(eq("stack", stack))
                        .into(new ArrayList<>());
@@ -313,8 +335,8 @@ public class StackDaoImpl implements StackDao {
     }
 
     @Override
-    public AclImpl getACL(String stack, String user) throws ServerException, NotFoundException {
-        AclImpl found;
+    public AclEntryImpl getACL(String stack, String user) throws ServerException, NotFoundException {
+        AclEntryImpl found;
         try {
             found = acls.find(and(eq("stack", stack),
                                   eq("user", user)))
@@ -324,7 +346,7 @@ public class StackDaoImpl implements StackDao {
         }
 
         if (found == null) {
-            throw new NotFoundException("NOT FOUND");
+            throw new NotFoundException(format("ACL for stack with id '%s' and user '%s' was not found", stack, user));
         }
 
         return found;

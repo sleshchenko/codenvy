@@ -21,7 +21,8 @@ public enum StackAction {
     SET_PERMISSIONS("setPermissions"),
     READ("read"),
     UPDATE("update"),
-    DELETE("delete");
+    DELETE("delete"),
+    SEARCH("search");
 
     private final String action;
 

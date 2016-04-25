@@ -67,16 +67,6 @@ public class WorkspacePermissionStorage implements PermissionsStorage {
     }
 
     @Override
-    public List<PermissionsImpl> get(String user) throws ServerException {
-        return toPermissions(workerDao.getWorkersByUser(user));
-    }
-
-    @Override
-    public List<PermissionsImpl> get(String user, String domain) throws ServerException {
-        return toPermissions(workerDao.getWorkersByUser(user));
-    }
-
-    @Override
     public PermissionsImpl get(String user, String domain, String instance) throws ServerException, NotFoundException {
         return toPermission(workerDao.getWorker(instance, user));
     }

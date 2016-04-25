@@ -17,7 +17,7 @@ package com.codenvy.api.workspace.server.stack;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.workspace.server.model.AclImpl;
+import org.eclipse.che.api.core.acl.AclEntryImpl;
 import org.eclipse.che.api.workspace.server.spi.StackDao;
 import org.eclipse.che.api.workspace.shared.dto.stack.StackDto;
 import org.slf4j.Logger;
@@ -46,7 +46,7 @@ public class StackCreatorPermissionsProvider implements MethodInterceptor {
             Response response = (Response)proceed;
             StackDto createdStack = (StackDto)response.getEntity();
             try {
-                stackDao.storeACL(createdStack.getId(), new AclImpl(createdStack.getCreator(),
+                stackDao.storeACL(createdStack.getId(), new AclEntryImpl(createdStack.getCreator(),
                                                                     Stream.of(StackAction.values())
                                                                           .map(StackAction::toString)
                                                                           .collect(Collectors.toList())));

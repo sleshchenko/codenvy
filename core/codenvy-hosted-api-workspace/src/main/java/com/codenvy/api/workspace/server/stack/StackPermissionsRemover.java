@@ -16,9 +16,8 @@ package com.codenvy.api.workspace.server.stack;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.workspace.server.model.AclImpl;
+import org.eclipse.che.api.core.acl.AclEntryImpl;
 import org.eclipse.che.api.workspace.server.spi.StackDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +39,8 @@ public class StackPermissionsRemover implements MethodInterceptor {
         String stackId = (String)methodInvocation.getArguments()[0];
         Object proceed = methodInvocation.proceed();
         try {
-            List<AclImpl> acLs = stackDao.getACLs(stackId);
-            for (AclImpl acL : acLs) {
+            List<AclEntryImpl> acLs = stackDao.getACLs(stackId);
+            for (AclEntryImpl acL : acLs) {
                 stackDao.removeACL(stackId, acL.getUser());
             }
         } catch (ServerException e) {

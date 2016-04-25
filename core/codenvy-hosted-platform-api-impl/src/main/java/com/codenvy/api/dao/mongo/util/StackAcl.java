@@ -14,27 +14,27 @@
  */
 package com.codenvy.api.dao.mongo.util;
 
-import org.eclipse.che.api.workspace.server.model.AclImpl;
+import org.eclipse.che.api.core.acl.AclEntryImpl;
 
 import java.util.List;
 
 /**
  * @author Sergii Leschenko
  */
-public class StackAcl extends AclImpl {
-    private final String stackId;
+public class StackAcl extends AclEntryImpl {
+    private final String stack;
 
-    public StackAcl(String stackId, String userId, List<String> actions) {
+    public StackAcl(String stack, String userId, List<String> actions) {
         super(userId, actions);
-        this.stackId = stackId;
+        this.stack = stack;
     }
 
-    public StackAcl(String stackId, AclImpl acl) {
+    public StackAcl(String stack, AclEntryImpl acl) {
         super(acl.getUser(), acl.getActions());
-        this.stackId = stackId;
+        this.stack = stack;
     }
 
-    public String getStackId() {
-        return stackId;
+    public String getStack() {
+        return stack;
     }
 }
