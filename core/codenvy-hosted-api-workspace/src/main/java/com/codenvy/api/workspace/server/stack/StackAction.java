@@ -19,6 +19,7 @@ package com.codenvy.api.workspace.server.stack;
  */
 public enum StackAction {
     SET_PERMISSIONS("setPermissions"),
+    READ_PERMISSIONS("readPermissions"),
     READ("read"),
     UPDATE("update"),
     DELETE("delete"),

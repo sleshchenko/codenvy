@@ -45,7 +45,6 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.elemMatch;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
-import static com.mongodb.client.model.Filters.or;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
@@ -270,8 +269,7 @@ public class StackDaoImpl implements StackDao {
     public List<StackImpl> searchStacks(@Nullable List<String> tags, int skipCount, int maxItems) throws ServerException {
         try {
             final Bson aclQuery = and(elemMatch("actions", in(StackAction.SEARCH.toString())),
-                                      or(eq("user", "*"),
-                                         eq("user", "user123")));
+                                      eq("user", "*"));
 
             final ArrayList<StackAcl> aclsResult = acls.find(aclQuery)
                                                        .into(new ArrayList<>());
