@@ -154,6 +154,11 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.hosted-infrastructure</groupId>
+                <artifactId>codenvy-hosted-api-account</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.hosted-infrastructure</groupId>
                 <artifactId>codenvy-hosted-api-permission</artifactId>
                 <version>${project.version}</version>
             </dependency>
