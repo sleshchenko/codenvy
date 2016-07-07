@@ -17,6 +17,7 @@ package com.codenvy.api.permission.server.dao;
 import com.codenvy.api.permission.server.AbstractPermissionsDomain;
 import com.codenvy.api.permission.server.PermissionsImpl;
 
+import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 
@@ -45,12 +46,12 @@ public interface PermissionsStorage {
      *
      * @param permissions
      *         permission to store
-     * @throws NotFoundException
-     *         when given instance was not found
+     * @throws ConflictException
+     *         when instance or user doesn't exist
      * @throws ServerException
      *         when any other error occurs during permissions storing
      */
-    void store(PermissionsImpl permissions) throws ServerException, NotFoundException;
+    void store(PermissionsImpl permissions) throws ServerException, ConflictException;
 
     /**
      * @param user

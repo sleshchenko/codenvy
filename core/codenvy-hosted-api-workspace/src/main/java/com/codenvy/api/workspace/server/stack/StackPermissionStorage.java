@@ -60,14 +60,19 @@ public class StackPermissionStorage implements PermissionsStorage {
     }
 
     @Override
-    public void store(PermissionsImpl permissions) throws ServerException, NotFoundException {
-        final StackImpl stack = stackDao.getById(permissions.getInstance());
+    public void store(PermissionsImpl permissions) throws ServerException {
+        final StackImpl stack;
+        try {
+            stack = stackDao.getById(permissions.getInstance());
+        } catch (NotFoundException e) {
+            throw new ServerException(e.getMessage(), e);
+        }
         stack.getAcl().removeIf(aclEntry -> aclEntry.getUser().equals(permissions.getUser()));
         stack.getAcl().add(new AclEntryImpl(permissions.getUser(),
                                             permissions.getActions()));
         try {
             stackDao.update(stack);
-        } catch (ConflictException e) {
+        } catch (ConflictException | NotFoundException e) {
             throw new ServerException(e.getMessage(), e);
         }
     }

@@ -328,7 +328,22 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.onpremises</groupId>
+                <artifactId>codenvy-hosted-api-account</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.onpremises</groupId>
                 <artifactId>codenvy-hosted-api-factory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.onpremises</groupId>
+                <artifactId>codenvy-hosted-api-license</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.onpremises</groupId>
+                <artifactId>codenvy-hosted-api-organization</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -621,11 +636,6 @@
                 <groupId>com.github.fakemongo</groupId>
                 <artifactId>fongo</artifactId>
                 <version>${com.github.fakemongo.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${jdbc.h2-driver.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.license4j</groupId>

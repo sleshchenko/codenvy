@@ -20,12 +20,13 @@ import com.codenvy.api.permission.server.dao.PermissionsStorage;
 import com.codenvy.api.permission.shared.Permissions;
 import com.google.common.collect.ImmutableSet;
 
+import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.acl.AclEntry;
 import org.eclipse.che.api.machine.server.model.impl.AclEntryImpl;
-import org.eclipse.che.api.machine.server.spi.RecipeDao;
 import org.eclipse.che.api.machine.server.recipe.RecipeImpl;
+import org.eclipse.che.api.machine.server.spi.RecipeDao;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -59,11 +60,15 @@ public class RecipePermissionStorage implements PermissionsStorage {
     }
 
     @Override
-    public void store(PermissionsImpl permissions) throws ServerException, NotFoundException {
-        final RecipeImpl recipe = recipeDao.getById(permissions.getInstance());
-        recipe.getAcl().removeIf(aclEntry -> aclEntry.getUser().equals(permissions.getUser()));
-        recipe.getAcl().add(new AclEntryImpl(permissions.getUser(), permissions.getActions()));
-        recipeDao.update(recipe);
+    public void store(PermissionsImpl permissions) throws ConflictException, ServerException {
+        try {
+            final RecipeImpl recipe = recipeDao.getById(permissions.getInstance());
+            recipe.getAcl().removeIf(aclEntry -> aclEntry.getUser().equals(permissions.getUser()));
+            recipe.getAcl().add(new AclEntryImpl(permissions.getUser(), permissions.getActions()));
+            recipeDao.update(recipe);
+        } catch (NotFoundException e) {
+            throw new ConflictException("Could not store permissions for non-existent recipe or user");
+        }
     }
 
     @Override

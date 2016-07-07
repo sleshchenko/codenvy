@@ -71,6 +71,8 @@ public class PermissionManager {
      * @throws NotFoundException
      *         when permissions have unsupported domain
      * @throws ConflictException
+     *         when instance or user doesn't exist
+     * @throws ConflictException
      *         when new permissions remove last 'setPermissions' of given instance
      * @throws ServerException
      *         when any other error occurs during permissions storing
