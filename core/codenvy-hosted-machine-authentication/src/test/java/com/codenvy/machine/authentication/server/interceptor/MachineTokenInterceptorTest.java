@@ -118,7 +118,7 @@ public class MachineTokenInterceptorTest {
         final String workspaceId = "testWs123";
         when(workspaceImpl.getId()).thenReturn(workspaceId);
 
-        workspaceManager.startWorkspace(workspaceId, null, null);
+        workspaceManager.startWorkspace(workspaceId, null);
 
         verify(tokenRegistry).generateToken(eq(USER_ID), eq(workspaceId));
     }
@@ -128,7 +128,7 @@ public class MachineTokenInterceptorTest {
         final String workspaceId = "testWs123";
         when(workspaceImpl.getId()).thenReturn(workspaceId);
 
-        workspaceManager.recoverWorkspace(workspaceId, null, null);
+        workspaceManager.recoverWorkspace(workspaceId, null);
 
         verify(tokenRegistry).generateToken(eq(USER_ID), eq(workspaceId));
     }

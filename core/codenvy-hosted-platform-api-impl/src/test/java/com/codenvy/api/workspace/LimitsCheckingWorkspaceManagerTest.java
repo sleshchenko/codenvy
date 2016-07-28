@@ -270,7 +270,7 @@ public class LimitsCheckingWorkspaceManagerTest {
         doReturn(ws).when(manager).getWorkspace(anyString()); // <- currently running 2gb
         doReturn(ws).when(manager).checkRamAndPropagateStart(anyObject(), anyString(), anyString(), anyObject());
 
-        manager.startWorkspace(ws.getId(), null, null);
+        manager.startWorkspace(ws.getId(), null);
 
         ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
         verify(manager).checkRamAndPropagateStart(anyObject(), anyString(), argument.capture(), anyObject());
@@ -298,6 +298,6 @@ public class LimitsCheckingWorkspaceManagerTest {
                                                                                               false));
         doReturn(ws).when(manager).getWorkspace(anyString()); // <- currently running 2gb
 
-        manager.startWorkspace(ws.getId(), null, null);
+        manager.startWorkspace(ws.getId(), null);
     }
 }
