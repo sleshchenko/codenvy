@@ -33,6 +33,7 @@ import com.codenvy.auth.sso.client.filter.RequestMethodFilter;
 import com.codenvy.auth.sso.client.filter.UriStartFromRequestFilter;
 import com.codenvy.auth.sso.server.organization.UserCreationValidator;
 import com.codenvy.auth.sso.server.organization.UserCreator;
+import com.codenvy.organization.api.OrganizationModule;
 import com.codenvy.plugin.github.factory.resolver.GithubFactoryParametersResolver;
 import com.codenvy.plugin.gitlab.factory.resolver.GitlabFactoryParametersResolver;
 import com.google.inject.AbstractModule;
@@ -167,6 +168,7 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         install(new WorkerJpaModule());
         install(new MachineJpaModule());
         bind(AccountDao.class).to(JpaAccountDao.class);
+        install(new OrganizationModule());
         bind(FactoryDao.class).to(JpaFactoryDao.class);
         bind(JpaWorkspaceDao.class).to(OnPremisesJpaWorkspaceDao.class);
         bind(AuthenticationDao.class).to(com.codenvy.api.dao.authentication.AuthenticationDaoImpl.class);

@@ -62,7 +62,7 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
     private static final Striped<Lock> CREATE_LOCKS   = Striped.lazyWeakLock(100);
     private static final Striped<Lock> START_LOCKS    = Striped.lazyWeakLock(100);
 
-    private final UserManager userManager;
+    private final AccountManager accountManager;
 
     private final int  workspacesPerUser;
     private final long maxRamPerEnv;
@@ -75,13 +75,12 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
                                           WorkspaceDao workspaceDao,
                                           WorkspaceRuntimes runtimes,
                                           EventService eventService,
-                                          UserManager userManager,
-                                          SnapshotDao snapshotDao,
                                           AccountManager accountManager,
+                                          SnapshotDao snapshotDao,
                                           @Named("workspace.runtime.auto_snapshot") boolean defaultAutoSnapshot,
                                           @Named("workspace.runtime.auto_restore") boolean defaultAutoRestore) {
         super(workspaceDao, runtimes, eventService, accountManager, defaultAutoSnapshot, defaultAutoRestore, snapshotDao);
-        this.userManager = userManager;
+        this.accountManager = accountManager;
         this.workspacesPerUser = workspacesPerUser;
         this.maxRamPerEnv = "-1".equals(maxRamPerEnv) ? -1 : Size.parseSizeToMegabytes(maxRamPerEnv);
         this.ramPerUser = "-1".equals(ramPerUser) ? -1 : Size.parseSizeToMegabytes(ramPerUser);
@@ -290,7 +289,7 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
 
     private void checkNamespaceValidity(String namespace, String errorMsg) throws ServerException {
         try {
-            userManager.getByName(namespace);
+            accountManager.getByName(namespace);
         } catch (NotFoundException e) {
             throw new ServerException(errorMsg);
         }
