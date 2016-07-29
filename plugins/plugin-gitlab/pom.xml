@@ -34,6 +34,6 @@
         </license>
     </licenses>
     <modules>
-        <module>codenvy-plugin-gitlab-factory-resolver</module>
+        <!--<module>codenvy-plugin-gitlab-factory-resolver</module>-->
     </modules>
 </project>

@@ -36,6 +36,6 @@
     <modules>
         <module>codenvy-plugin-pullrequest-shared</module>
         <module>codenvy-plugin-pullrequest-server</module>
-        <module>codenvy-plugin-pullrequest-ide</module>
+        <!--<module>codenvy-plugin-pullrequest-ide</module>-->
     </modules>
 </project>

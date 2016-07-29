@@ -39,7 +39,7 @@
         <module>plugin-github</module>
         <module>plugin-gitlab</module>
         <module>plugin-microsoft</module>
-        <module>plugin-urlfactory</module>
+        <!--<module>plugin-urlfactory</module>-->
         <module>plugin-product-info</module>
     </modules>
 </project>

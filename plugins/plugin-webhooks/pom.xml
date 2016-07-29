@@ -27,6 +27,6 @@
     <packaging>pom</packaging>
     <name>Codenvy Plugin :: Webhooks :: Parent</name>
     <modules>
-        <module>codenvy-plugin-webhooks-base</module>
+        <!--<module>codenvy-plugin-webhooks-base</module>-->
     </modules>
 </project>
