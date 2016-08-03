@@ -109,8 +109,8 @@ public class LimitsCheckingWorkspaceManagerTest {
                                                                                               false,
                                                                                               2000));
         doReturn(ImmutableList.of(mock(WorkspaceImpl.class), mock(WorkspaceImpl.class))) // <- currently used 2
-                                                                                         .when(manager)
-                                                                                         .getByNamespace(anyString());
+                .when(manager)
+                .getByNamespace(anyString());
         final WorkspaceCallback callback = mock(WorkspaceCallback.class);
 
         manager.checkCountAndPropagateCreation("user123", callback);
@@ -143,8 +143,8 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test(expectedExceptions = LimitExceededException.class,
-            expectedExceptionsMessageRegExp = "There are 1 running workspaces consuming 2GB RAM. Your current RAM " +
-                                              "limit is 2GB. This workspaces requires an additional 1GB. You can stop other workspaces to free resources.")
+          expectedExceptionsMessageRegExp = "There are 1 running workspaces consuming 2GB RAM. Your current RAM " +
+                                            "limit is 2GB. This workspaces requires an additional 1GB. You can stop other workspaces to free resources.")
     public void shouldNotBeAbleToStartNewWorkspaceIfRamLimitIsExceeded() throws Exception {
         final LimitsCheckingWorkspaceManager manager = spy(new LimitsCheckingWorkspaceManager(2,
                                                                                               "2gb", // <- workspaces ram limit
@@ -347,7 +347,8 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test
-    public void shouldBeAbleToCreateWorkspaceWithMultipleMachinesIncludingMachineWithoutLimitsWhichDoesNotExceedRamLimit() throws Exception {
+    public void shouldBeAbleToCreateWorkspaceWithMultipleMachinesIncludingMachineWithoutLimitsWhichDoesNotExceedRamLimit()
+            throws Exception {
         final WorkspaceConfig config = createConfig("256mb", "256mb", null);
 
         final LimitsCheckingWorkspaceManager manager = spy(new LimitsCheckingWorkspaceManager(2,

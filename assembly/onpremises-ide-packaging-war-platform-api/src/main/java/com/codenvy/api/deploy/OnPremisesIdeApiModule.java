@@ -38,6 +38,7 @@ import com.codenvy.organization.api.OrganizationModule;
 import com.codenvy.plugin.github.factory.resolver.GithubFactoryParametersResolver;
 import com.codenvy.plugin.gitlab.factory.resolver.GitlabFactoryParametersResolver;
 import com.codenvy.report.ReportModule;
+import com.codenvy.resources.api.ResourceModule;
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.assistedinject.FactoryModuleBuilder;
@@ -185,6 +186,7 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         install(new FactoryJpaModule());
         bind(AccountDao.class).to(JpaAccountDao.class);
         install(new OrganizationModule());
+        install(new ResourceModule());
         bind(FactoryDao.class).to(JpaFactoryDao.class);
         bind(StackDao.class).to(JpaStackDao.class);
         bind(RecipeDao.class).to(JpaRecipeDao.class);

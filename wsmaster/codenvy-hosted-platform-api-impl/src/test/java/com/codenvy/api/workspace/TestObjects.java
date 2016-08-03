@@ -112,21 +112,22 @@ public final class TestObjects {
         Map.Entry<String, ExtendedMachineImpl> devMachine = env.getMachines()
                                                                .entrySet()
                                                                .stream()
-                                                               .filter(entry -> entry.getValue() .getAgents() != null &&
-                                                                                entry.getValue().getAgents().contains("org.eclipse.che.ws-agent"))
+                                                               .filter(entry -> entry.getValue().getAgents() != null &&
+                                                                                entry.getValue().getAgents()
+                                                                                     .contains("org.eclipse.che.ws-agent"))
                                                                .findAny()
                                                                .get();
         final WorkspaceRuntimeImpl runtime =
                 new WorkspaceRuntimeImpl(workspace.getConfig().getDefaultEnv(),
                                          null,
                                          env.getMachines().entrySet()
-                                                           .stream()
-                                                           .map(entry -> createMachine(workspace.getId(),
-                                                                                       envName,
-                                                                                       entry.getKey(),
-                                                                                       devMachine.getKey().equals(entry.getKey()),
-                                                                                       entry.getValue().getAttributes().get("memoryLimitBytes")))
-                                                           .collect(toList()),
+                                            .stream()
+                                            .map(entry -> createMachine(workspace.getId(),
+                                                                        envName,
+                                                                        entry.getKey(),
+                                                                        devMachine.getKey().equals(entry.getKey()),
+                                                                        entry.getValue().getAttributes().get("memoryLimitBytes")))
+                                            .collect(toList()),
                                          createMachine(workspace.getId(),
                                                        envName,
                                                        devMachine.getKey(),

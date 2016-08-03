@@ -58,5 +58,6 @@
         <module>codenvy-hosted-report-shared</module>
         <module>codenvy-hosted-report</module>
         <module>codenvy-hosted-api-organization</module>
+        <module>codenvy-hosted-api-resources</module>
     </modules>
 </project>

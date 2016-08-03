@@ -97,7 +97,8 @@ public class OnPremisesIdeApiServletModule extends ServletModule {
                "/license",
                "/license/*",
                "/organization",
-               "/organization/*")
+               "/organization/*",
+               "/resources/*")
                 .through(com.codenvy.auth.sso.client.LoginFilter.class);
 
         final Map<String, String> corsFilterParams = new HashMap<>();

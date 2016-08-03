@@ -63,12 +63,14 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
     private static final long          BYTES_TO_MEGABYTES_DIVIDER = 1024L * 1024L;
 
     private final EnvironmentParser environmentParser;
-    private final AccountManager accountManager;
+    private final AccountManager    accountManager;
 
-    private final int  workspacesPerUser;
+    private final int workspacesPerUser;
+
     private final long maxRamPerEnvMB;
-    private final long ramPerUserMB;
     private final long defaultMachineMemorySizeBytes;
+    private final long ramPerUserMB;
+
 
     @Inject
     public LimitsCheckingWorkspaceManager(@Named("limits.user.workspaces.count") int workspacesPerUser,
@@ -139,10 +141,7 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
                                                                     NotFoundException,
                                                                     ConflictException {
         checkMaxEnvironmentRam(config);
-        return checkRamAndPropagateStart(config,
-                                         config.getDefaultEnv(),
-                                         namespace,
-                                         () -> super.startWorkspace(config, namespace, isTemporary));
+        return super.startWorkspace(config, namespace, isTemporary);
     }
 
     @Override
