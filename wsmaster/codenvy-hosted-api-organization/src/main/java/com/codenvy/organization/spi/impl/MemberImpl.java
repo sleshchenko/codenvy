@@ -14,19 +14,20 @@
  */
 package com.codenvy.organization.spi.impl;
 
+import com.codenvy.api.permission.server.model.impl.AbstractPermissions;
+import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.codenvy.organization.shared.model.Member;
 
-import org.eclipse.che.api.user.server.model.impl.UserImpl;
-
-import javax.persistence.ElementCollection;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Data object for {@link Member}.
@@ -54,26 +55,15 @@ import java.util.Objects;
                                     "WHERE m.userId = :userId")
         }
 )
-public class MemberImpl implements Member {
-    @Id
-    private String userId;
-
-    @Id
+@Table(indexes = @Index(columnList = "userId, organizationId", unique = true))
+public class MemberImpl extends AbstractPermissions implements Member {
+    @Column
     private String organizationId;
-
-    @ManyToOne
-    @JoinColumn(name = "userId", referencedColumnName = "id",
-                insertable = false, updatable = false)
-    private UserImpl user;
 
     @ManyToOne
     @JoinColumn(name = "organizationId", referencedColumnName = "id",
                 insertable = false, updatable = false)
     private OrganizationImpl organization;
-
-
-    @ElementCollection
-    private List<String> actions;
 
     public MemberImpl() {
     }
@@ -88,31 +78,22 @@ public class MemberImpl implements Member {
         return userId;
     }
 
+    @Override
+    public String getInstanceId() {
+        return organizationId;
+    }
+
+    @Override
+    public String getDomainId() {
+        return OrganizationDomain.DOMAIN_ID;
+    }
+
     public String getOrganizationId() {
         return organizationId;
     }
 
     public List<String> getActions() {
         return actions;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof MemberImpl)) return false;
-        final MemberImpl other = (MemberImpl)obj;
-        return Objects.equals(userId, other.userId)
-               && Objects.equals(organizationId, other.organizationId)
-               && actions.equals(other.actions);
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 31 * hash + Objects.hashCode(userId);
-        hash = 31 * hash + Objects.hashCode(organizationId);
-        hash = 31 * hash + actions.hashCode();
-        return hash;
     }
 
     @Override
