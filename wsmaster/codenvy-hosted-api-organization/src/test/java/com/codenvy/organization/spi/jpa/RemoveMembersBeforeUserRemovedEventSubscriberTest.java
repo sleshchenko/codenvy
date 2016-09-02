@@ -65,7 +65,7 @@ public class RemoveMembersBeforeUserRemovedEventSubscriberTest {
 
     @Test
     public void shouldRemoveMembersOnBeforeUserRemovedEvent() throws Exception {
-        final UserImpl user = new UserImpl("user123");
+        final UserImpl user = new UserImpl("user123", "user@test.com", "userok");
 
         final MemberImpl member1 = new MemberImpl("user123", "org123", Collections.emptyList());
         final MemberImpl member2 = new MemberImpl("user123", "org321", Collections.emptyList());
