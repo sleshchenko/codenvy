@@ -57,9 +57,7 @@ import static org.eclipse.che.api.core.model.workspace.WorkspaceStatus.STOPPED;
 @Singleton
 public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
 
-    private static final DecimalFormat DECIMAL_FORMAT             = new DecimalFormat("#0.#");
     private static final Striped<Lock> CREATE_LOCKS               = Striped.lazyWeakLock(100);
-    private static final Striped<Lock> START_LOCKS                = Striped.lazyWeakLock(100);
     private static final long          BYTES_TO_MEGABYTES_DIVIDER = 1024L * 1024L;
 
     private final EnvironmentParser environmentParser;
@@ -69,12 +67,10 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
 
     private final long maxRamPerEnvMB;
     private final long defaultMachineMemorySizeBytes;
-    private final long ramPerUserMB;
 
 
     @Inject
     public LimitsCheckingWorkspaceManager(@Named("limits.user.workspaces.count") int workspacesPerUser,
-                                          @Named("limits.user.workspaces.ram") String ramPerUser,
                                           @Named("limits.workspace.env.ram") String maxRamPerEnv,
                                           WorkspaceDao workspaceDao,
                                           WorkspaceRuntimes runtimes,
@@ -89,7 +85,6 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
         this.accountManager = accountManager;
         this.workspacesPerUser = workspacesPerUser;
         this.maxRamPerEnvMB = "-1".equals(maxRamPerEnv) ? -1 : Size.parseSizeToMegabytes(maxRamPerEnv);
-        this.ramPerUserMB = "-1".equals(ramPerUser) ? -1 : Size.parseSizeToMegabytes(ramPerUser);
         this.environmentParser = environmentParser;
         this.defaultMachineMemorySizeBytes = Size.parseSize(defaultMachineMemorySizeMB + "MB");
     }
@@ -128,10 +123,7 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
                 "Unable to start workspace %s, because its namespace owner is " +
                 "unavailable and it is impossible to check resources consumption.",
                 workspaceId));
-        return checkRamAndPropagateStart(workspace.getConfig(),
-                                         envName,
-                                         workspace.getNamespace(),
-                                         () -> super.startWorkspace(workspaceId, envName, restore));
+        return super.startWorkspace(workspaceId, envName, restore);
     }
 
     @Override
@@ -160,69 +152,6 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
     @VisibleForTesting
     interface WorkspaceCallback<T extends WorkspaceImpl> {
         T call() throws ConflictException, NotFoundException, ServerException;
-    }
-
-    /**
-     * Checks that starting workspace won't exceed user's RAM limit.
-     * Throws {@link BadRequestException} in the case of RAM constraint violation, otherwise
-     * performs {@code callback.call()} and returns its result.
-     */
-    @VisibleForTesting
-    <T extends WorkspaceImpl> T checkRamAndPropagateStart(WorkspaceConfig config,
-                                                          String envName,
-                                                          String namespace,
-                                                          WorkspaceCallback<T> callback) throws ServerException,
-                                                                                                NotFoundException,
-                                                                                                ConflictException {
-        if (ramPerUserMB < 0) {
-            return callback.call();
-        }
-        Environment env = config.getEnvironments().get(envName);
-        if (env == null) {
-            env = config.getEnvironments().get(config.getDefaultEnv());
-        }
-        // It is important to lock in this place because:
-        // if ram per user limit is 2GB and user currently using 1GB, then if he sends 2 separate requests to start a new
-        // 1 GB workspace , it may start both of them, because currently allocated ram check is not atomic one
-        final Lock lock = START_LOCKS.get(namespace);
-        lock.lock();
-        try {
-            final List<WorkspaceImpl> workspacesPerUser = getByNamespace(namespace);
-            final long runningWorkspaces = workspacesPerUser.stream()
-                                                            .filter(ws -> STOPPED != ws.getStatus())
-                                                            .count();
-            final long currentlyUsedRamMB = workspacesPerUser.stream()
-                                                             .filter(ws -> STOPPED != ws.getStatus())
-                                                             .map(ws -> ws.getRuntime().getMachines())
-                                                             .flatMap(List::stream)
-                                                             .mapToInt(machine -> machine.getConfig()
-                                                                                         .getLimits()
-                                                                                         .getRam())
-                                                             .sum();
-            final long currentlyFreeRamMB = ramPerUserMB - currentlyUsedRamMB;
-            final long allocating = sumRam(env);
-            if (allocating > currentlyFreeRamMB) {
-                final String usedRamGb = DECIMAL_FORMAT.format(currentlyUsedRamMB / 1024D);
-                final String limitRamGb = DECIMAL_FORMAT.format(ramPerUserMB / 1024D);
-                final String requiredRamGb = DECIMAL_FORMAT.format(allocating / 1024D);
-                throw new LimitExceededException(format("There are %d running workspaces consuming" +
-                                                        " %sGB RAM. Your current RAM limit is %sGB." +
-                                                        " This workspaces requires an additional %sGB." +
-                                                        " You can stop other workspaces to free resources.",
-                                                        runningWorkspaces,
-                                                        usedRamGb,
-                                                        limitRamGb,
-                                                        requiredRamGb),
-                                                 ImmutableMap.of("workspaces_count", Long.toString(runningWorkspaces),
-                                                                 "used_ram", usedRamGb,
-                                                                 "limit_ram", limitRamGb,
-                                                                 "required_ram", requiredRamGb,
-                                                                 "ram_unit", "GB"));
-            }
-            return callback.call();
-        } finally {
-            lock.unlock();
-        }
     }
 
     /**

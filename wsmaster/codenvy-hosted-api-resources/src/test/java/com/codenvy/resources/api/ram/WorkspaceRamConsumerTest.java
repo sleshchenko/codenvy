@@ -15,30 +15,40 @@
 package com.codenvy.resources.api.ram;
 
 import com.codenvy.resources.api.ResourcesManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.spi.AccountImpl;
 import org.eclipse.che.api.core.model.workspace.WorkspaceConfig;
-import org.eclipse.che.api.machine.server.model.impl.LimitsImpl;
-import org.eclipse.che.api.machine.server.model.impl.MachineConfigImpl;
+import org.eclipse.che.api.environment.server.EnvironmentParser;
+import org.eclipse.che.api.environment.server.compose.ComposeEnvironmentImpl;
+import org.eclipse.che.api.environment.server.compose.ComposeFileParser;
+import org.eclipse.che.api.environment.server.compose.ComposeServiceImpl;
+import org.eclipse.che.api.machine.server.util.RecipeDownloader;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
 import org.eclipse.che.api.workspace.server.model.impl.EnvironmentImpl;
+import org.eclipse.che.api.workspace.server.model.impl.EnvironmentRecipeImpl;
+import org.eclipse.che.api.workspace.server.model.impl.ExtendedMachineImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
+import org.eclipse.che.commons.lang.NameGenerator;
+import org.eclipse.che.commons.lang.Size;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -51,6 +61,10 @@ import static org.mockito.Mockito.when;
  */
 @Listeners(MockitoTestNGListener.class)
 public class WorkspaceRamConsumerTest {
+    private static final ObjectMapper YAML_PARSER = new ObjectMapper(new YAMLFactory());
+
+    private static final int DEFAULT_SIZE_MB = 500;
+
     @Mock
     private ResourcesManager resourcesManager;
     @Mock
@@ -62,8 +76,21 @@ public class WorkspaceRamConsumerTest {
     @Mock
     private AccountImpl      account;
 
+    @Mock
+    RecipeDownloader recipeDownloader;
+
+    ComposeFileParser composeFileParser = new ComposeFileParser();
+
+    EnvironmentParser environmentParser = new EnvironmentParser(composeFileParser, recipeDownloader);
+
     @InjectMocks
     private WorkspaceRamConsumer ramConsumer;
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+        ramConsumer.environmentParser = environmentParser;
+        ramConsumer.defaultMachineMemorySizeMB = DEFAULT_SIZE_MB;
+    }
 
     @Test
     public void shouldReserveRamOnStartingWorkspaceById() throws Throwable {
@@ -139,39 +166,49 @@ public class WorkspaceRamConsumerTest {
         return WorkspaceManager.class.getMethod(methodDescription[0].toString(), methodParams);
     }
 
-    public static WorkspaceImpl createWorkspace(String namespace, String envName, Integer... machineRams) {
-        return createWorkspace(namespace, envName, envName, machineRams);
+    public static WorkspaceImpl createWorkspace(String namespace, String envName, Integer... machineRamsMb) throws Exception {
+        return createWorkspace(namespace, envName, envName, machineRamsMb);
     }
 
     /** Creates users workspace object based on the owner and machines RAM. */
-    public static WorkspaceImpl createWorkspace(String namespace, String envName, String defaultEnvName, Integer... machineRams) {
+    public static WorkspaceImpl createWorkspace(String namespace, String envName, String defaultEnvName, Integer... machineRamsMb)
+            throws Exception {
         return WorkspaceImpl.builder()
-                            .setConfig(createConfig(envName, defaultEnvName, machineRams))
-                            .setNamespace(namespace)
+                            .setConfig(createConfig(envName, defaultEnvName, machineRamsMb))
+                            .setAccount(new AccountImpl("id", namespace, "test"))
                             .build();
     }
 
-    public static WorkspaceConfigImpl createConfig(String envName, String defaultEnvName, Integer... machineRams) {
-        final List<MachineConfigImpl> machineConfigs = new ArrayList<>(1 + machineRams.length);
-        for (Integer machineRam : machineRams) {
-            machineConfigs.add(createMachineConfig(machineRam));
+    public static WorkspaceConfigImpl createConfig(String envName, String defaultEnvName, Integer... machineRamsMb) throws Exception {
+        Map<String, ExtendedMachineImpl> machines = new HashMap<>();
+        HashMap<String, ComposeServiceImpl> services = new HashMap<>(machineRamsMb.length);
+        for (int i = 0; i < machineRamsMb.length; i++) {
+            services.put("machine" + i, createService());
+            // null is allowed to reproduce situation with default RAM size
+            if (machineRamsMb[i] != null) {
+                machines.put("machine" + i, new ExtendedMachineImpl(null,
+                                                                    null,
+                                                                    new HashMap<>(singletonMap("memoryLimitBytes",
+                                                                                               Long.toString(Size.parseSize(
+                                                                                                       machineRamsMb[i] + "mb"))))));
+            }
         }
+        ComposeEnvironmentImpl composeEnvironment = new ComposeEnvironmentImpl();
+        composeEnvironment.setServices(services);
+        String yaml = YAML_PARSER.writeValueAsString(composeEnvironment);
+        EnvironmentRecipeImpl recipe = new EnvironmentRecipeImpl("compose", "application/x-yaml", yaml, null);
         return WorkspaceConfigImpl.builder()
-                                  .setEnvironments(singletonList(new EnvironmentImpl(envName,
-                                                                                     null,
-                                                                                     machineConfigs)))
+                                  .setName(NameGenerator.generate("workspace", 2))
+                                  .setEnvironments(singletonMap(envName,
+                                                                new EnvironmentImpl(recipe,
+                                                                                    machines)))
                                   .setDefaultEnv(defaultEnvName)
                                   .build();
     }
 
-    /** Creates machine config object based on ram and dev flag. */
-    public static MachineConfigImpl createMachineConfig(int ramLimit) {
-        return new MachineConfigImpl(false,
-                                     null,
-                                     null,
-                                     null,
-                                     new LimitsImpl(ramLimit),
-                                     null,
-                                     null);
+    private static ComposeServiceImpl createService() {
+        ComposeServiceImpl service = new ComposeServiceImpl();
+        service.setImage("image");
+        return service;
     }
 }

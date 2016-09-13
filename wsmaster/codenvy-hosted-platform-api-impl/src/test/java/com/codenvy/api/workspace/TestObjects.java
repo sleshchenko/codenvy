@@ -104,66 +104,6 @@ public final class TestObjects {
         return createWorkspace(DEFAULT_USER_NAME, devMachineRam, machineRams).getConfig();
     }
 
-    /** Creates runtime workspace object based on the machines RAM. */
-    public static WorkspaceImpl createRuntime(String devMachineRam, String... machineRams) throws Exception {
-        final WorkspaceImpl workspace = createWorkspace(DEFAULT_USER_NAME, devMachineRam, machineRams);
-        final String envName = workspace.getConfig().getDefaultEnv();
-        EnvironmentImpl env = workspace.getConfig().getEnvironments().get(envName);
-        Map.Entry<String, ExtendedMachineImpl> devMachine = env.getMachines()
-                                                               .entrySet()
-                                                               .stream()
-                                                               .filter(entry -> entry.getValue().getAgents() != null &&
-                                                                                entry.getValue().getAgents()
-                                                                                     .contains("org.eclipse.che.ws-agent"))
-                                                               .findAny()
-                                                               .get();
-        final WorkspaceRuntimeImpl runtime =
-                new WorkspaceRuntimeImpl(workspace.getConfig().getDefaultEnv(),
-                                         null,
-                                         env.getMachines().entrySet()
-                                            .stream()
-                                            .map(entry -> createMachine(workspace.getId(),
-                                                                        envName,
-                                                                        entry.getKey(),
-                                                                        devMachine.getKey().equals(entry.getKey()),
-                                                                        entry.getValue().getAttributes().get("memoryLimitBytes")))
-                                            .collect(toList()),
-                                         createMachine(workspace.getId(),
-                                                       envName,
-                                                       devMachine.getKey(),
-                                                       true,
-                                                       devMachine.getValue().getAttributes().get("memoryLimitBytes")));
-        workspace.setStatus(RUNNING);
-        workspace.setRuntime(runtime);
-        return workspace;
-    }
-
-    private static MachineImpl createMachine(String workspaceId,
-                                             String envName,
-                                             String machineName,
-                                             boolean isDev,
-                                             String memoryBytes) {
-
-        return MachineImpl.builder()
-                          .setConfig(MachineConfigImpl.builder()
-                                                      .setDev(isDev)
-                                                      .setName(machineName)
-                                                      .setSource(new MachineSourceImpl("some-type")
-                                                                         .setContent("some-content"))
-                                                      .setLimits(new MachineLimitsImpl((int)Size.parseSizeToMegabytes(memoryBytes + "b")))
-                                                      .setType("someType")
-                                                      .build())
-                          .setId(NameGenerator.generate("machine", 10))
-                          .setOwner(DEFAULT_USER_NAME)
-                          .setStatus(MachineStatus.RUNNING)
-                          .setWorkspaceId(workspaceId)
-                          .setEnvName(envName)
-                          .setRuntime(new MachineRuntimeInfoImpl(emptyMap(),
-                                                                 emptyMap(),
-                                                                 emptyMap()))
-                          .build();
-    }
-
     private static ComposeServiceImpl createService() {
         ComposeServiceImpl service = new ComposeServiceImpl();
         service.setImage("image");

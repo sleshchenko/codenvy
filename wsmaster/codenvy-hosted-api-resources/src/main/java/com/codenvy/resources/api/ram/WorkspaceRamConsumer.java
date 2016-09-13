@@ -15,24 +15,25 @@
 package com.codenvy.resources.api.ram;
 
 import com.codenvy.resources.api.ResourcesManager;
+import com.google.common.annotations.VisibleForTesting;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.model.machine.MachineConfig;
 import org.eclipse.che.api.core.model.workspace.Environment;
 import org.eclipse.che.api.core.model.workspace.WorkspaceConfig;
 import org.eclipse.che.api.environment.server.EnvironmentParser;
-import org.eclipse.che.api.environment.server.compose.model.ComposeEnvironmentImpl;
+import org.eclipse.che.api.environment.server.model.CheServicesEnvironmentImpl;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
+import org.eclipse.che.api.workspace.server.model.impl.EnvironmentImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
+import org.eclipse.che.commons.lang.Size;
 
 import javax.inject.Inject;
-import java.util.List;
-import java.util.Optional;
+import javax.inject.Named;
 
 import static java.util.Collections.singletonList;
 
@@ -44,17 +45,25 @@ import static java.util.Collections.singletonList;
  * @author Sergii Leschenko
  */
 public class WorkspaceRamConsumer implements MethodInterceptor {
+    private static final long BYTES_TO_MEGABYTES_DIVIDER = 1024L * 1024L;
+
     @Inject
     private ResourcesManager resourcesManager;
-
     @Inject
     private WorkspaceManager workspaceManager;
+    @Inject
+    private AccountManager   accountManager;
+
+    @VisibleForTesting
+    @Inject
+    EnvironmentParser environmentParser;
 
     @Inject
-    private AccountManager accountManager;
+    @Named("machine.default_mem_size_mb")
+    @VisibleForTesting
+    int defaultMachineMemorySizeMB;
 
-    @Inject
-    private EnvironmentParser environmentParser;
+    private Long defaultMachineMemorySizeBytes;
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -77,34 +86,28 @@ public class WorkspaceRamConsumer implements MethodInterceptor {
             namespace = (String)arguments[1];
         }
 
-        Optional<? extends Environment> envOptional = findEnv(config.getEnvironments(), envName);
-        if (!envOptional.isPresent()) {
-            envOptional = findEnv(config.getEnvironments(), config.getDefaultEnv());
+        EnvironmentImpl environment = config.getEnvironments().get(envName);
+        if (environment == null) {
+            environment = config.getEnvironments().get(config.getDefaultEnv());
         }
 
-        final RamResource ramToUse = new RamResource(sumRam(envOptional.get()));
+        final RamResource ramToUse = new RamResource(sumRam(environment));
         final Account account = accountManager.getByName(namespace);
         return resourcesManager.reserveResources(account.getId(), singletonList(ramToUse), invocation::proceed);
-    }
-
-    private Optional<? extends Environment> findEnv(List<? extends Environment> environments, String envName) {
-        return environments.stream()
-                           .filter(env -> env.getName().equals(envName))
-                           .findFirst();
     }
 
     /**
      * Parses (and fetches if needed) recipe of environment and sums RAM size of all machines in environment in megabytes.
      */
     private long sumRam(Environment environment) throws ServerException {
-        ComposeEnvironmentImpl composeEnv = environmentParser.parse(environment);
+        CheServicesEnvironmentImpl composeEnv = environmentParser.parse(environment);
 
         long sumBytes = composeEnv.getServices()
                                   .values()
                                   .stream()
                                   .mapToLong(value -> {
                                       if (value.getMemLimit() == null || value.getMemLimit() == 0) {
-                                          return defaultMachineMemorySizeBytes;
+                                          return getDefaultMachineMemorySizeBytes();
                                       } else {
                                           return value.getMemLimit();
                                       }
@@ -112,10 +115,11 @@ public class WorkspaceRamConsumer implements MethodInterceptor {
                                   .sum();
         return sumBytes / BYTES_TO_MEGABYTES_DIVIDER;
     }
-    //TODO Fix it
-    private long sumRam(List<? extends MachineConfig> machineConfigs) {
-        return machineConfigs.stream()
-                             .mapToInt(m -> m.getLimits().getRam())
-                             .sum();
+
+    public long getDefaultMachineMemorySizeBytes() {
+        if (defaultMachineMemorySizeBytes != null) {
+            return defaultMachineMemorySizeBytes;
+        }
+        return defaultMachineMemorySizeBytes = Size.parseSize(defaultMachineMemorySizeMB + "MB");
     }
 }

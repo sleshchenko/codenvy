@@ -18,11 +18,10 @@ import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.model.workspace.WorkspaceStatus;
-import org.eclipse.che.api.machine.server.model.impl.LimitsImpl;
 import org.eclipse.che.api.machine.server.model.impl.MachineConfigImpl;
+import org.eclipse.che.api.machine.server.model.impl.MachineImpl;
+import org.eclipse.che.api.machine.server.model.impl.MachineLimitsImpl;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
-import org.eclipse.che.api.workspace.server.model.impl.EnvironmentImpl;
-import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceRuntimeImpl;
 import org.mockito.InjectMocks;
@@ -99,30 +98,23 @@ public class RamResourceUsageTrackerTest {
 
     /** Creates users workspace object based on the owner and machines RAM. */
     public static WorkspaceImpl createWorkspace(WorkspaceStatus status, Integer... machineRams) {
-        final List<MachineConfigImpl> machineConfigs = new ArrayList<>(1 + machineRams.length);
+        final List<MachineImpl> machines = new ArrayList<>(machineRams.length - 1);
         for (Integer machineRam : machineRams) {
-            machineConfigs.add(createMachineConfig(machineRam));
+            machines.add(createMachine(machineRam));
         }
         return WorkspaceImpl.builder()
-                            .setConfig(WorkspaceConfigImpl.builder()
-                                                          .setEnvironments(singletonList(new EnvironmentImpl("dev-env",
-                                                                                                             null,
-                                                                                                             machineConfigs)))
-                                                          .setDefaultEnv("dev-env")
-                                                          .build())
-                            .setRuntime(new WorkspaceRuntimeImpl("dev-env"))
+                            .setRuntime(new WorkspaceRuntimeImpl(null, null, machines, null))
                             .setStatus(status)
                             .build();
     }
 
-    /** Creates machine config object based on ram and dev flag. */
-    public static MachineConfigImpl createMachineConfig(int ramLimit) {
-        return new MachineConfigImpl(false,
-                                     null,
-                                     null,
-                                     null,
-                                     new LimitsImpl(ramLimit),
-                                     null,
-                                     null);
+    private static MachineImpl createMachine(int memoryMb) {
+        return MachineImpl.builder()
+                          .setConfig(MachineConfigImpl.builder()
+                                                      .setLimits(new MachineLimitsImpl(memoryMb))
+                                                      .build())
+                          .build();
     }
+
+
 }

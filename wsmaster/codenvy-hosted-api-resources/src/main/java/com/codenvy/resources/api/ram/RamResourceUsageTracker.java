@@ -52,18 +52,12 @@ public class RamResourceUsageTracker implements ResourceUsageTracker<RamResource
         final List<WorkspaceImpl> accountWorkspaces = workspaceManager.getByNamespace(account.getName());
         final long currentlyUsedRamMB = accountWorkspaces.stream()
                                                          .filter(ws -> STOPPED != ws.getStatus())
-                                                         .map(ws -> ws.getConfig()
-                                                                      .getEnvironment(ws.getRuntime().getActiveEnv())
-                                                                      .get()
-                                                                      .getMachineConfigs())
-                                                         .mapToLong(this::sumRam)
+                                                         .map(ws -> ws.getRuntime().getMachines())
+                                                         .flatMap(List::stream)
+                                                         .mapToInt(machine -> machine.getConfig()
+                                                                                     .getLimits()
+                                                                                     .getRam())
                                                          .sum();
         return new RamResource(currentlyUsedRamMB);
-    }
-
-    private long sumRam(List<? extends MachineConfig> machineConfigs) {
-        return machineConfigs.stream()
-                             .mapToInt(m -> m.getLimits().getRam())
-                             .sum();
     }
 }
