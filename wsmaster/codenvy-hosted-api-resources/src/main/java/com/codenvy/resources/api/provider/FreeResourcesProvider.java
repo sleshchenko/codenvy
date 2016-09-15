@@ -14,6 +14,8 @@
  */
 package com.codenvy.resources.api.provider;
 
+import com.codenvy.organization.api.OrganizationManager;
+import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.codenvy.resources.api.ram.RamResource;
 import com.codenvy.resources.spi.impl.ProvidedResourceImpl;
@@ -40,15 +42,18 @@ import static java.util.Collections.singletonList;
 public class FreeResourcesProvider implements ResourcesProvider {
     public static final String FREE_RESOURCES_PROVIDER = "free";
 
-    private final AccountManager accountManager;
-    private final long           ramPerUser;
-    private final long           ramPerOrganization;
+    private final AccountManager      accountManager;
+    private final OrganizationManager organizationManager;
+    private final long                ramPerUser;
+    private final long                ramPerOrganization;
 
     @Inject
     public FreeResourcesProvider(AccountManager accountManager,
+                                 OrganizationManager organizationManager,
                                  @Named("limits.user.workspaces.ram") String ramPerUser,
                                  @Named("limits.organization.workspaces.ram") String ramPerOrganization) {
         this.accountManager = accountManager;
+        this.organizationManager = organizationManager;
         this.ramPerUser = "-1".equals(ramPerUser) ? -1 : Size.parseSizeToMegabytes(ramPerUser);
         this.ramPerOrganization = "-1".equals(ramPerOrganization) ? -1 : Size.parseSizeToMegabytes(ramPerOrganization);
     }
@@ -64,14 +69,19 @@ public class FreeResourcesProvider implements ResourcesProvider {
                                                           -1L,
                                                           singletonList(new RamResource(ramPerUser))));
         } else if (OrganizationImpl.ORGANIZATIONAL_ACCOUNT.equals(account.getType())) {
-            return singletonList(new ProvidedResourceImpl(FREE_RESOURCES_PROVIDER,
-                                                          null,
-                                                          accountId,
-                                                          -1L,
-                                                          -1L,
-                                                          singletonList(new RamResource(ramPerOrganization))));
+            final Organization organization = organizationManager.getById(accountId);
+            // only root organizations should have own resources
+            // suborganization will use resources of its parent organization. Will be implemented soon
+            if (organization.getParent() == null) {
+                return singletonList(new ProvidedResourceImpl(FREE_RESOURCES_PROVIDER,
+                                                              null,
+                                                              accountId,
+                                                              -1L,
+                                                              -1L,
+                                                              singletonList(new RamResource(ramPerOrganization))));
+            }
         }
-        //resources for other types of accounts are not specified
+        //free resources for other types of accounts are not specified
         return Collections.emptyList();
     }
 }

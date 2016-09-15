@@ -14,6 +14,7 @@
  */
 package com.codenvy.resources.api.provider;
 
+import com.codenvy.organization.api.OrganizationManager;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.codenvy.resources.api.ram.RamResource;
 import com.codenvy.resources.spi.impl.ProvidedResourceImpl;
@@ -32,6 +33,7 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,16 +51,18 @@ public class FreeResourcesProviderTest {
     private static final Integer USER_RAM         = 2000;
     private static final Integer ORGANIZATION_RAM = 3000;
     @Mock
-    private AccountManager accountManager;
-
+    private AccountManager      accountManager;
     @Mock
-    private AccountImpl account;
+    private OrganizationManager organizationManager;
+    @Mock
+    private AccountImpl         account;
 
     private FreeResourcesProvider provider;
 
     @BeforeMethod
     public void setUp() throws Exception {
         provider = new FreeResourcesProvider(accountManager,
+                                             organizationManager,
                                              USER_RAM + "mb",
                                              ORGANIZATION_RAM + "mb");
 
@@ -84,7 +88,10 @@ public class FreeResourcesProviderTest {
     }
 
     @Test
-    public void shouldProvideConfiguredRamForOrganizationalAccount() throws Exception {
+    public void shouldProvideConfiguredRamForRootOrganizationalAccount() throws Exception {
+        when(organizationManager.getById(anyString())).thenReturn(new OrganizationImpl("organization123",
+                                                                                       "testOrg",
+                                                                                       null));
         when(account.getType()).thenReturn(OrganizationImpl.ORGANIZATIONAL_ACCOUNT);
 
         final List<ProvidedResourceImpl> resources = provider.getResources("organization123");
@@ -99,6 +106,19 @@ public class FreeResourcesProviderTest {
         assertNull(providedResource.getId());
         assertEquals(providedResource.getResources().size(), 1);
         assertEquals(providedResource.getResources().get(0), new RamResource(ORGANIZATION_RAM));
+    }
+
+    @Test
+    public void shouldNotProvideConfiguredRamForChildOrganizationalAccount() throws Exception {
+        when(organizationManager.getById(anyString())).thenReturn(new OrganizationImpl("organization123",
+                                                                                       "testOrg",
+                                                                                       "organization321"));
+        when(account.getType()).thenReturn(OrganizationImpl.ORGANIZATIONAL_ACCOUNT);
+
+        final List<ProvidedResourceImpl> resources = provider.getResources("organization123");
+
+        verify(accountManager).getById(eq("organization123"));
+        assertTrue(resources.isEmpty());
     }
 
     @Test
