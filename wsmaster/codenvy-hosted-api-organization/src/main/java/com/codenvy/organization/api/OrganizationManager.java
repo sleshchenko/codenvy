@@ -69,7 +69,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization creation
      */
-    public OrganizationImpl create(Organization newOrganization) throws ConflictException, ServerException {
+    public Organization create(Organization newOrganization) throws ConflictException, ServerException {
         requireNonNull(newOrganization, "Required non-null organization");
         checkNameReservation(newOrganization.getName());
         final OrganizationImpl organization = new OrganizationImpl(NameGenerator.generate("organization", 16),
@@ -95,9 +95,9 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs organization updating
      */
-    public OrganizationImpl update(String organizationId, Organization update) throws NotFoundException,
-                                                                                      ConflictException,
-                                                                                      ServerException {
+    public Organization update(String organizationId, Organization update) throws NotFoundException,
+                                                                                  ConflictException,
+                                                                                  ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         requireNonNull(update, "Required non-null organization");
         checkNameReservation(update.getName());
@@ -135,7 +135,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization fetching
      */
-    public OrganizationImpl getById(String organizationId) throws NotFoundException, ServerException {
+    public Organization getById(String organizationId) throws NotFoundException, ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         return organizationDao.getById(organizationId);
     }
@@ -153,7 +153,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization fetching
      */
-    public OrganizationImpl getByName(String organizationName) throws NotFoundException, ServerException {
+    public Organization getByName(String organizationName) throws NotFoundException, ServerException {
         requireNonNull(organizationName, "Required non-null organization name");
         return organizationDao.getByName(organizationName);
     }
@@ -173,7 +173,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organizations fetching
      */
-    public Page<OrganizationImpl> getByParent(String parent, int maxItems, int skipCount) throws ServerException {
+    public Page<? extends Organization> getByParent(String parent, int maxItems, int skipCount) throws ServerException {
         requireNonNull(parent, "Required non-null parent");
         return organizationDao.getByParent(parent, maxItems, skipCount);
     }
@@ -193,7 +193,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organizations fetching
      */
-    public Page<OrganizationImpl> getByMember(String userId, int maxItems, int skipCount) throws ServerException {
+    public Page<? extends Organization> getByMember(String userId, int maxItems, int skipCount) throws ServerException {
         requireNonNull(userId, "Required non-null user id");
         return memberDao.getOrganizations(userId, maxItems, skipCount);
     }
