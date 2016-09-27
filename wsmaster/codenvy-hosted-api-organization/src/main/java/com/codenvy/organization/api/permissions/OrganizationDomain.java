@@ -50,4 +50,9 @@ public class OrganizationDomain extends AbstractPermissionsDomain<MemberImpl> {
     public OrganizationDomain() {
         super(DOMAIN_ID, ACTIONS);
     }
+
+    @Override
+    protected MemberImpl doCreateInstance(String userId, String instanceId, List<String> allowedActions) {
+        return new MemberImpl(userId, instanceId, allowedActions);
+    }
 }
