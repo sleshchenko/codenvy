@@ -20,6 +20,7 @@ import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 
 import org.eclipse.che.api.core.ConflictException;
+import org.eclipse.che.api.core.Page;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -28,9 +29,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
-import java.util.List;
-
+import static java.util.Collections.singletonList;
+import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -174,37 +174,39 @@ public class OrganizationManagerTest {
     }
 
     @Test(expectedExceptions = NullPointerException.class)
-    public void shouldThrowNpeWhenGettingOrganizationsByNullParent() throws Exception {
-        manager.getByParent(null);
+    public void shouldThrowNpeWhenGettingSuborganizationsByNullParent() throws Exception {
+        manager.getByParent(null, 30, 0);
     }
 
     @Test
     public void shouldGetOrganizationsByParent() throws Exception {
         final OrganizationImpl toFetch = createOrganization();
-        when(organizationDao.getByParent(eq("org123"))).thenReturn(Collections.singletonList(toFetch));
+        when(organizationDao.getByParent(eq("org123"), anyInt(), anyInt()))
+                .thenReturn(new Page<>(singletonList(toFetch), 0, 1, 1));
 
-        final List<OrganizationImpl> organizations = manager.getByParent("org123");
+        final Page<OrganizationImpl> organizations = manager.getByParent("org123", 30, 0);
 
-        assertEquals(organizations.size(), 1);
-        assertEquals(organizations.get(0), toFetch);
-        verify(organizationDao).getByParent("org123");
+        assertEquals(organizations.getItemsCount(), 1);
+        assertEquals(organizations.getItems().get(0), toFetch);
+        verify(organizationDao).getByParent("org123", 30, 0);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void shouldThrowNpeWhenGettingOrganizationsByNullUserId() throws Exception {
-        manager.getByMember(null);
+        manager.getByMember(null, 30, 0);
     }
 
     @Test
     public void shouldGetOrganizationsByMember() throws Exception {
         final OrganizationImpl toFetch = createOrganization();
-        when(memberDao.getOrganizations(eq("org123"))).thenReturn(Collections.singletonList(toFetch));
+        when(memberDao.getOrganizations(eq("org123"), anyInt(), anyInt()))
+                .thenReturn(new Page<>(singletonList(toFetch), 0, 1, 1));
 
-        final List<OrganizationImpl> organizations = manager.getByMember("org123");
+        final Page<OrganizationImpl> organizations = manager.getByMember("org123", 30, 0);
 
-        assertEquals(organizations.size(), 1);
-        assertEquals(organizations.get(0), toFetch);
-        verify(memberDao).getOrganizations("org123");
+        assertEquals(organizations.getItemsCount(), 1);
+        assertEquals(organizations.getItems().get(0), toFetch);
+        verify(memberDao).getOrganizations("org123", 30, 0);
     }
 
     private OrganizationImpl createOrganization() {

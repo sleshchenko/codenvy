@@ -22,13 +22,13 @@ import com.google.common.collect.Sets;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
+import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.commons.lang.NameGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.util.List;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -163,15 +163,19 @@ public class OrganizationManager {
      *
      * @param parent
      *         id of parent organizations
+     * @param maxItems
+     *         the maximum number of organizations to return
+     * @param skipCount
+     *         the number of organizations to skip
      * @return list of children organizations
      * @throws NullPointerException
      *         when {@code parent} is null
      * @throws ServerException
      *         when any other error occurs during organizations fetching
      */
-    public List<OrganizationImpl> getByParent(String parent) throws ServerException {
+    public Page<OrganizationImpl> getByParent(String parent, int maxItems, int skipCount) throws ServerException {
         requireNonNull(parent, "Required non-null parent");
-        return organizationDao.getByParent(parent);
+        return organizationDao.getByParent(parent, maxItems, skipCount);
     }
 
     /**
@@ -179,15 +183,19 @@ public class OrganizationManager {
      *
      * @param userId
      *         user id
+     * @param maxItems
+     *         the maximum number of organizations to return
+     * @param skipCount
+     *         the number of organizations to skip
      * @return list of organizations where user is member
      * @throws NullPointerException
      *         when {@code userId} is null
      * @throws ServerException
      *         when any other error occurs during organizations fetching
      */
-    public List<OrganizationImpl> getByMember(String userId) throws ServerException {
+    public Page<OrganizationImpl> getByMember(String userId, int maxItems, int skipCount) throws ServerException {
         requireNonNull(userId, "Required non-null user id");
-        return memberDao.getOrganizations(userId);
+        return memberDao.getOrganizations(userId, maxItems, skipCount);
     }
 
     /**

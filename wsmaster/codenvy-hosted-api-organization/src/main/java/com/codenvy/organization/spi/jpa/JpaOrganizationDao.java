@@ -21,6 +21,7 @@ import com.google.inject.persist.Transactional;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
+import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.jdbc.jpa.DuplicateKeyException;
 import org.eclipse.che.api.core.notification.EventService;
@@ -121,13 +122,20 @@ public class JpaOrganizationDao implements OrganizationDao {
 
     @Override
     @Transactional
-    public List<OrganizationImpl> getByParent(String parent) throws ServerException {
+    public Page<OrganizationImpl> getByParent(String parent, int maxItems, int skipCount) throws ServerException {
         requireNonNull(parent, "Required non-null parent");
         try {
             final EntityManager manager = managerProvider.get();
-            return manager.createNamedQuery("Organizations.getByParent", OrganizationImpl.class)
-                          .setParameter("parent", parent)
-                          .getResultList();
+            final List<OrganizationImpl> result = manager.createNamedQuery("Organization.getByParent", OrganizationImpl.class)
+                                                         .setParameter("parent", parent)
+                                                         .setMaxResults(maxItems)
+                                                         .setFirstResult(skipCount)
+                                                         .getResultList();
+            final Long suborganizationsCount = manager.createNamedQuery("Organization.getSuborganizationsCount", Long.class)
+                                                      .setParameter("parent", parent)
+                                                      .getSingleResult();
+
+            return new Page<>(result, skipCount, maxItems, suborganizationsCount);
         } catch (RuntimeException e) {
             throw new ServerException(e.getLocalizedMessage(), e);
         }
