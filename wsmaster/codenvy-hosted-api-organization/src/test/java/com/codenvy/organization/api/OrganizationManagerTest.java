@@ -19,9 +19,9 @@ import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 
+import org.eclipse.che.api.core.ConflictException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.BeforeMethod;
@@ -53,7 +53,6 @@ public class OrganizationManagerTest {
     @Mock
     MemberDao       memberDao;
 
-    @InjectMocks
     OrganizationManager manager;
 
     @BeforeMethod
@@ -87,11 +86,17 @@ public class OrganizationManagerTest {
         assertNotEquals(id, "identifier");
     }
 
+    @Test(expectedExceptions = ConflictException.class)
+    public void shouldThrowConflictExceptionOnCreationIfOrganizationNameIsReserved() throws Exception {
+        final OrganizationImpl organization = new OrganizationImpl("identifier", "reserved", "parentId");
+
+        manager.create(organization);
+    }
+
     @Test(expectedExceptions = NullPointerException.class)
     public void shouldThrowNpeWhenCreatingNullableOrganization() throws Exception {
         manager.create(null);
     }
-
 
     @Test(expectedExceptions = NullPointerException.class)
     public void shouldThrowNpeWhenUpdatingOrganizationWithNullEntity() throws Exception {
@@ -112,6 +117,11 @@ public class OrganizationManagerTest {
         assertEquals(updated.getName(), update.getName());
         assertEquals(updated.getParent(), existing.getParent());
         assertEquals(updated.getId(), existing.getId());
+    }
+
+    @Test(expectedExceptions = ConflictException.class)
+    public void shouldThrowConflictExceptionOnUpdatingIfOrganizationNameIsReserved() throws Exception {
+        manager.update("id", new OrganizationImpl("id", "reserved", "parentId"));
     }
 
     @Test(expectedExceptions = NullPointerException.class)

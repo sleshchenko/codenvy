@@ -64,11 +64,14 @@ public class OrganizationManager {
      *         when {@code organization} is null
      * @throws ConflictException
      *         when organization with such id/name already exists
+     * @throws ConflictException
+     *         when specified organization name is reserved
      * @throws ServerException
      *         when any other error occurs during organization creation
      */
     public OrganizationImpl create(Organization newOrganization) throws ConflictException, ServerException {
         requireNonNull(newOrganization, "Required non-null organization");
+        checkNameReservation(newOrganization.getName());
         final OrganizationImpl organization = new OrganizationImpl(NameGenerator.generate("organization", 16),
                                                                    newOrganization.getName(),
                                                                    newOrganization.getParent());
@@ -88,7 +91,7 @@ public class OrganizationManager {
      * @throws NotFoundException
      *         when organization with given id doesn't exist
      * @throws ConflictException
-     *         when name updated with a value which is not unique
+     *         when name updated with a value which is reserved or is not unique
      * @throws ServerException
      *         when any other error occurs organization updating
      */
@@ -97,6 +100,7 @@ public class OrganizationManager {
                                                                                       ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         requireNonNull(update, "Required non-null organization");
+        checkNameReservation(update.getName());
         final OrganizationImpl organization = organizationDao.getById(organizationId);
         organization.setName(update.getName());
         organizationDao.update(organization);
@@ -184,5 +188,19 @@ public class OrganizationManager {
     public List<OrganizationImpl> getByMember(String userId) throws ServerException {
         requireNonNull(userId, "Required non-null user id");
         return memberDao.getOrganizations(userId);
+    }
+
+    /**
+     * Checks reservation of organization name
+     *
+     * @param organizationName
+     *         organization name to check
+     * @throws ConflictException
+     *         when organization name is reserved and can be used by user
+     */
+    private void checkNameReservation(String organizationName) throws ConflictException {
+        if (reservedNames.contains(organizationName.toLowerCase())) {
+            throw new ConflictException(String.format("Organization name '%s' is reserved", organizationName));
+        }
     }
 }
