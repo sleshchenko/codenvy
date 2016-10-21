@@ -14,12 +14,15 @@
  */
 package com.codenvy.resource.api.ram;
 
+import com.codenvy.resource.api.exception.NoEnoughResourcesException;
+import com.codenvy.resource.model.Resource;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 
-import org.eclipse.che.api.core.ConflictException;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import java.util.Collections;
 
 import static org.testng.Assert.assertEquals;
 
@@ -38,12 +41,12 @@ public class RamResourceTypeTest {
 
     @Test
     public void shouldFindSumRamAmountOnResourcesAggregation() throws Exception {
-        final ResourceImpl aggregate = resourceType.aggregate(new ResourceImpl(RamResourceType.ID,
-                                                                               1000,
-                                                                               RamResourceType.UNIT),
-                                                              new ResourceImpl(RamResourceType.ID,
-                                                                               500,
-                                                                               RamResourceType.UNIT));
+        final Resource aggregate = resourceType.aggregate(new ResourceImpl(RamResourceType.ID,
+                                                                           1000,
+                                                                           RamResourceType.UNIT),
+                                                          new ResourceImpl(RamResourceType.ID,
+                                                                           500,
+                                                                           RamResourceType.UNIT));
 
         assertEquals(aggregate.getType(), RamResourceType.ID);
         assertEquals(aggregate.getAmount(), 1500);
@@ -52,27 +55,33 @@ public class RamResourceTypeTest {
 
     @Test
     public void shouldFindDifferenceRamAmountOnResourcesDeduction() throws Exception {
-        final ResourceImpl deducted = resourceType.deduct(new ResourceImpl(RamResourceType.ID,
-                                                                           1000,
-                                                                           RamResourceType.UNIT),
-                                                          new ResourceImpl(RamResourceType.ID,
-                                                                           500,
-                                                                           RamResourceType.UNIT));
+        final Resource deducted = resourceType.deduct(new ResourceImpl(RamResourceType.ID,
+                                                                       1000,
+                                                                       RamResourceType.UNIT),
+                                                      new ResourceImpl(RamResourceType.ID,
+                                                                       500,
+                                                                       RamResourceType.UNIT));
 
         assertEquals(deducted.getType(), RamResourceType.ID);
         assertEquals(deducted.getAmount(), 500);
         assertEquals(deducted.getUnit(), RamResourceType.UNIT);
     }
 
-    @Test(expectedExceptions = ConflictException.class,
-          expectedExceptionsMessageRegExp = "Workspace needs 1000mb RAM to start - your account has 500mb RAM available.")
+    @Test
     public void shouldThrowConflictExceptionWhenDeductionAmountMoreThanTotalAmountOnResourcesDeduction() throws Exception {
-        resourceType.deduct(new ResourceImpl(RamResourceType.ID,
-                                             500,
-                                             RamResourceType.UNIT),
-                            new ResourceImpl(RamResourceType.ID,
-                                             1000,
-                                             RamResourceType.UNIT));
+        try {
+            resourceType.deduct(new ResourceImpl(RamResourceType.ID,
+                                                 300,
+                                                 RamResourceType.UNIT),
+                                new ResourceImpl(RamResourceType.ID,
+                                                 1000,
+                                                 RamResourceType.UNIT));
+        } catch (NoEnoughResourcesException e) {
+            assertEquals(e.getMessage(), "Your account doesn't have enough resources to use.");
+            assertEquals(e.getRequiredResources(), Collections.singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                                              700,
+                                                                                              RamResourceType.UNIT)));
+        }
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class,

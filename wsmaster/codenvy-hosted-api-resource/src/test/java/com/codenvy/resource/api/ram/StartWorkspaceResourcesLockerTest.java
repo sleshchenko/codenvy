@@ -14,7 +14,7 @@
  */
 package com.codenvy.resource.api.ram;
 
-import com.codenvy.resource.api.ResourceManager;
+import com.codenvy.resource.api.usage.ResourceUsageManager;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -56,26 +56,27 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Tests for {@link WorkspaceRamConsumer}
+ * Tests for {@link StartWorkspaceResourcesLocker}
  *
  * @author Sergii Leschenko
  */
 @Listeners(MockitoTestNGListener.class)
-public class WorkspaceRamConsumerTest {
+public class StartWorkspaceResourcesLockerTest {
+    //Fix tests
     private static final ObjectMapper YAML_PARSER = new ObjectMapper(new YAMLFactory());
 
     private static final int DEFAULT_SIZE_MB = 500;
 
     @Mock
-    private ResourceManager  resourceManager;
+    private ResourceUsageManager resourceUsageManager;
     @Mock
-    private WorkspaceManager workspaceManager;
+    private WorkspaceManager     workspaceManager;
     @Mock
-    private AccountManager   accountManager;
+    private AccountManager       accountManager;
     @Mock
-    private MethodInvocation invocation;
+    private MethodInvocation     invocation;
     @Mock
-    private AccountImpl      account;
+    private AccountImpl          account;
 
     @Mock
     RecipeDownloader recipeDownloader;
@@ -85,7 +86,7 @@ public class WorkspaceRamConsumerTest {
     EnvironmentParser environmentParser = new EnvironmentParser(composeFileParser, recipeDownloader);
 
     @InjectMocks
-    private WorkspaceRamConsumer ramConsumer;
+    private StartWorkspaceResourcesLocker ramConsumer;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -105,9 +106,9 @@ public class WorkspaceRamConsumerTest {
 
         verify(workspaceManager).getWorkspace(eq("workspace123"));
         verify(accountManager).getByName(eq("testAccount"));
-        verify(resourceManager).reserveResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
-                                                                                                     1000,
-                                                                                                     RamResourceType.UNIT))), any());
+        verify(resourceUsageManager).lockResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                                                       1000,
+                                                                                                       RamResourceType.UNIT))), any());
     }
 
     @Test
@@ -122,9 +123,9 @@ public class WorkspaceRamConsumerTest {
 
         verify(workspaceManager).getWorkspace(eq("workspace123"));
         verify(accountManager).getByName(eq("testAccount"));
-        verify(resourceManager).reserveResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
-                                                                                                     1000,
-                                                                                                     RamResourceType.UNIT))), any());
+        verify(resourceUsageManager).lockResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                                                       1000,
+                                                                                                       RamResourceType.UNIT))), any());
     }
 
     @Test
@@ -139,9 +140,9 @@ public class WorkspaceRamConsumerTest {
 
         verify(workspaceManager).getWorkspace(eq("workspace123"));
         verify(accountManager).getByName(eq("testAccount"));
-        verify(resourceManager).reserveResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
-                                                                                                     DEFAULT_SIZE_MB + 300,
-                                                                                                     RamResourceType.UNIT))), any());
+        verify(resourceUsageManager).lockResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                                                       DEFAULT_SIZE_MB + 300,
+                                                                                                       RamResourceType.UNIT))), any());
     }
 
     @Test
@@ -154,9 +155,9 @@ public class WorkspaceRamConsumerTest {
         ramConsumer.invoke(invocation);
 
         verify(accountManager).getByName(eq("testAccount"));
-        verify(resourceManager).reserveResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
-                                                                                                     DEFAULT_SIZE_MB + 700,
-                                                                                                     RamResourceType.UNIT))), any());
+        verify(resourceUsageManager).lockResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                                                       DEFAULT_SIZE_MB + 700,
+                                                                                                       RamResourceType.UNIT))), any());
     }
 
     @Test
@@ -169,9 +170,9 @@ public class WorkspaceRamConsumerTest {
         ramConsumer.invoke(invocation);
 
         verify(accountManager).getByName(eq("testAccount"));
-        verify(resourceManager).reserveResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
-                                                                                                     1000,
-                                                                                                     RamResourceType.UNIT))), any());
+        verify(resourceUsageManager).lockResources(eq("account123"), eq(singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                                                       1000,
+                                                                                                       RamResourceType.UNIT))), any());
     }
 
     @Test(dataProvider = "interceptedMethods")

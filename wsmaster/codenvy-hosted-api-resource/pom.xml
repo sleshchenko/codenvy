@@ -35,7 +35,7 @@
         </dependency>
         <dependency>
             <groupId>com.codenvy.onpremises.wsmaster</groupId>
-            <artifactId>codenvy-hosted-api-organization</artifactId>
+            <artifactId>codenvy-hosted-api-permission</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -280,7 +280,7 @@
                         <id>analyze</id>
                         <configuration>
                             <ignoredDependencies>
-                                <ignoreDependenvy>com.codenvy.onpremises.wsmaster:codenvy-hosted-api-organization</ignoreDependenvy>
+                                <ignoreDependenvy>com.codenvy.onpremises.wsmaster:codenvy-hosted-api-permission</ignoreDependenvy>
                             </ignoredDependencies>
                         </configuration>
                     </execution>

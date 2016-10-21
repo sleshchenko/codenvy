@@ -16,47 +16,47 @@ package com.codenvy.resource.api.free;
 
 import com.codenvy.resource.model.FreeResourcesLimit;
 import com.codenvy.resource.model.Resource;
-import com.codenvy.resource.model.ResourceType;
 
 import org.eclipse.che.api.core.BadRequestException;
 
 import javax.inject.Inject;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toMap;
+import javax.inject.Singleton;
 
 /**
  * Utils for validation of {@link FreeResourcesLimit}
  *
  * @author Sergii Leschenko
  */
+@Singleton
 public class FreeResourcesLimitValidator {
-    private final Map<String, Set<String>> resourcesTypesToUnits;
+    private final ResourceValidator resourceValidator;
 
     @Inject
-    public FreeResourcesLimitValidator(Set<ResourceType> supportedResources) {
-        this.resourcesTypesToUnits = supportedResources.stream()
-                                                       .collect(toMap(ResourceType::getId, ResourceType::getSupportedUnits));
+    public FreeResourcesLimitValidator(ResourceValidator resourceValidator) {
+        this.resourceValidator = resourceValidator;
     }
 
+    /**
+     * Validates given {@code freeResourcesLimit}
+     *
+     * @param freeResourcesLimit
+     *         resources limit to validate
+     * @throws BadRequestException
+     *         when {@code freeResourcesLimit} is null
+     * @throws BadRequestException
+     *         when any of {@code freeResourcesLimit.getResources} is not valid
+     * @see ResourceValidator#check(Resource)
+     */
     public void check(FreeResourcesLimit freeResourcesLimit) throws BadRequestException {
         if (freeResourcesLimit == null) {
-            throw new BadRequestException("Missed resources limit description");
+            throw new BadRequestException("Missed free resources limit description.");
+        }
+        if (freeResourcesLimit.getAccountId() == null) {
+            throw new BadRequestException("Missed account id.");
         }
 
         for (Resource resource : freeResourcesLimit.getResources()) {
-            final Set<String> units = resourcesTypesToUnits.get(resource.getType());
-            if (units == null) {
-                throw new BadRequestException("Specified resources type '" + resource.getType() + "' is not supported");
-            }
-
-            if (!units.contains(resource.getUnit())) {
-                throw new BadRequestException("Specified resources type '" + resource.getType() + "' support only following units: " +
-                                              units.stream()
-                                                   .collect(Collectors.joining(", ")));
-            }
+            resourceValidator.check(resource);
         }
     }
 }

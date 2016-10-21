@@ -17,9 +17,26 @@ package com.codenvy.organization.api;
 import com.codenvy.api.permission.server.SystemDomain;
 import com.codenvy.organization.api.permissions.OrganizationCreatorPermissionsProvider;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;
+import com.codenvy.organization.api.permissions.OrganizationResourceServicePermissionsFilter;
+import com.codenvy.organization.api.resource.DefaultOrganizationResourcesProvider;
+import com.codenvy.organization.api.resource.OrganizationResourceLockProvider;
+import com.codenvy.organization.api.resource.OrganizationResourceServicesPermissionsChecker;
+import com.codenvy.organization.api.resource.OrganizationResourcesReserveTracker;
+import com.codenvy.organization.api.resource.OrganizationResourcesLimitLocker;
+import com.codenvy.organization.api.resource.OrganizationResourcesManager;
+import com.codenvy.organization.api.resource.OrganizationResourcesProvider;
+import com.codenvy.organization.api.resource.OrganizationResourcesService;
+import com.codenvy.resource.api.ResourceLockProvider;
+import com.codenvy.resource.api.ResourcesReserveTracker;
+import com.codenvy.resource.api.free.DefaultResourcesProvider;
+import com.codenvy.resource.api.license.ResourcesProvider;
+import com.codenvy.resource.api.usage.ResourceServicesPermissionsChecker;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
+
+import static com.google.inject.matcher.Matchers.subclassesOf;
+import static org.eclipse.che.inject.Matchers.names;
 
 /**
  * @author Sergii Leschenko
@@ -32,9 +49,36 @@ public class OrganizationApiModule extends AbstractModule {
 
         bind(OrganizationCreatorPermissionsProvider.class).asEagerSingleton();
 
-        final Multibinder<String> binder = Multibinder.newSetBinder(binder(),
-                                                                    String.class,
-                                                                    Names.named(SystemDomain.SYSTEM_DOMAIN_ACTIONS));
-        binder.addBinding().toInstance(OrganizationPermissionsFilter.MANAGE_ORGANIZATIONS_ACTION);
+        final Multibinder<String> systemActionsBinder = Multibinder.newSetBinder(binder(),
+                                                                                 String.class,
+                                                                                 Names.named(SystemDomain.SYSTEM_DOMAIN_ACTIONS));
+        systemActionsBinder.addBinding().toInstance(OrganizationPermissionsFilter.MANAGE_ORGANIZATIONS_ACTION);
+
+        Multibinder.newSetBinder(binder(), ResourcesProvider.class)
+                   .addBinding().to(OrganizationResourcesProvider.class);
+
+        Multibinder.newSetBinder(binder(), DefaultResourcesProvider.class)
+                   .addBinding().to(DefaultOrganizationResourcesProvider.class);
+
+        Multibinder.newSetBinder(binder(), ResourcesReserveTracker.class)
+                   .addBinding().to(OrganizationResourcesReserveTracker.class);
+
+        Multibinder.newSetBinder(binder(), ResourceLockProvider.class)
+                   .addBinding().to(OrganizationResourceLockProvider.class);
+
+        Multibinder.newSetBinder(binder(), ResourceServicesPermissionsChecker.class)
+                   .addBinding().to(OrganizationResourceServicesPermissionsChecker.class);
+
+        bind(OrganizationResourcesService.class);
+        bind(OrganizationResourceServicePermissionsFilter.class);
+
+        final OrganizationResourcesLimitLocker organizationResourcesLimitLocker = new OrganizationResourcesLimitLocker();
+        requestInjection(organizationResourcesLimitLocker);
+        bindInterceptor(subclassesOf(OrganizationResourcesManager.class),
+                        names("setResourcesLimit"),
+                        organizationResourcesLimitLocker);
+        bindInterceptor(subclassesOf(OrganizationResourcesManager.class),
+                        names("remove"),
+                        organizationResourcesLimitLocker);
     }
 }

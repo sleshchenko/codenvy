@@ -15,8 +15,12 @@
 package com.codenvy.resource.api;
 
 import com.codenvy.resource.model.FreeResourcesLimit;
+import com.codenvy.resource.model.License;
+import com.codenvy.resource.model.ProvidedResources;
 import com.codenvy.resource.model.Resource;
 import com.codenvy.resource.shared.dto.FreeResourcesLimitDto;
+import com.codenvy.resource.shared.dto.LicenseDto;
+import com.codenvy.resource.shared.dto.ProvidedResourcesDto;
 import com.codenvy.resource.shared.dto.ResourceDto;
 
 import org.eclipse.che.dto.server.DtoFactory;
@@ -24,7 +28,7 @@ import org.eclipse.che.dto.server.DtoFactory;
 import java.util.stream.Collectors;
 
 /**
- * Helps to convert to/from DTOs related to resource.
+ * Helps to convert objects related to resource to DTOs.
  *
  * @author Sergii Leschenko
  */
@@ -45,5 +49,31 @@ public final class DtoConverter {
                                              .map(DtoConverter::asDto)
                                              .collect(Collectors.toList()))
                          .withAccountId(limit.getAccountId());
+    }
+
+    public static LicenseDto asDto(License license) {
+        return DtoFactory.newDto(LicenseDto.class)
+                         .withAccountId(license.getAccountId())
+                         .withTotalResources(license.getTotalResources()
+                                                    .stream()
+                                                    .map(DtoConverter::asDto)
+                                                    .collect(Collectors.toList()))
+                         .withResourcesDetails(license.getResourcesDetails()
+                                                      .stream()
+                                                      .map(DtoConverter::asDto)
+                                                      .collect(Collectors.toList()));
+    }
+
+    private static ProvidedResourcesDto asDto(ProvidedResources providedResources) {
+        return DtoFactory.newDto(ProvidedResourcesDto.class)
+                         .withId(providedResources.getId())
+                         .withOwner(providedResources.getOwner())
+                         .withStartTime(providedResources.getStartTime())
+                         .withEndTime(providedResources.getEndTime())
+                         .withProviderId(providedResources.getProviderId())
+                         .withResources(providedResources.getResources()
+                                                         .stream()
+                                                         .map(DtoConverter::asDto)
+                                                         .collect(Collectors.toList()));
     }
 }

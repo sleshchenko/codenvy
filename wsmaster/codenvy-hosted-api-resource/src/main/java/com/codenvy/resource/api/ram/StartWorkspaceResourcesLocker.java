@@ -14,7 +14,9 @@
  */
 package com.codenvy.resource.api.ram;
 
-import com.codenvy.resource.api.ResourceManager;
+import com.codenvy.resource.api.exception.NoEnoughResourcesException;
+import com.codenvy.resource.api.usage.ResourceUsageManager;
+import com.codenvy.resource.model.Resource;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -22,6 +24,7 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
+import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.workspace.Environment;
 import org.eclipse.che.api.core.model.workspace.WorkspaceConfig;
@@ -41,20 +44,20 @@ import static java.util.Collections.singletonList;
 /**
  * Intercepts {@link WorkspaceManager#startWorkspace(String, String, Boolean)}
  * and {@link WorkspaceManager#startWorkspace(WorkspaceConfig, String, boolean)}
- * and reserves RAM resource while workspace is starting.
+ * and locks RAM resource while workspace is starting.
  *
  * @author Sergii Leschenko
  */
 @Singleton
-public class WorkspaceRamConsumer implements MethodInterceptor {
+public class StartWorkspaceResourcesLocker implements MethodInterceptor {
     private static final long BYTES_TO_MEGABYTES_DIVIDER = 1024L * 1024L;
 
     @Inject
-    private ResourceManager  resourceManager;
+    private ResourceUsageManager resourceUsageManager;
     @Inject
-    private WorkspaceManager workspaceManager;
+    private WorkspaceManager     workspaceManager;
     @Inject
-    private AccountManager   accountManager;
+    private AccountManager       accountManager;
 
     @VisibleForTesting
     @Inject
@@ -91,7 +94,17 @@ public class WorkspaceRamConsumer implements MethodInterceptor {
         final Environment environment = config.getEnvironments().get(firstNonNull(envName, config.getDefaultEnv()));
         final ResourceImpl ramToUse = new ResourceImpl(RamResourceType.ID, sumRam(environment), RamResourceType.UNIT);
         final Account account = accountManager.getByName(namespace);
-        return resourceManager.reserveResources(account.getId(), singletonList(ramToUse), invocation::proceed);
+        try {
+            return resourceUsageManager.lockResources(account.getId(), singletonList(ramToUse), invocation::proceed);
+        } catch (NoEnoughResourcesException e) {
+            // starting of workspace requires only RAM resource
+            final Resource ramRequired = e.getRequiredResources().get(0);
+            throw new ConflictException(String.format("Workspace needs %s%s RAM to start. Your account needs more %s%s RAM available.",
+                                                      ramToUse.getAmount(),
+                                                      ramToUse.getUnit(),
+                                                      ramRequired.getAmount(),
+                                                      ramRequired.getUnit()));
+        }
     }
 
     /**

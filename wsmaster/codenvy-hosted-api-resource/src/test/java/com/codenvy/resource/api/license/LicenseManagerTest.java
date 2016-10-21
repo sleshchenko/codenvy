@@ -12,8 +12,12 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.resource.api;
+package com.codenvy.resource.api.license;
 
+import com.codenvy.resource.api.ResourceAggregator;
+import com.codenvy.resource.api.license.LicenseManager;
+import com.codenvy.resource.api.license.ResourcesProvider;
+import com.codenvy.resource.model.License;
 import com.codenvy.resource.spi.impl.LicenseImpl;
 import com.codenvy.resource.spi.impl.ProvidedResourcesImpl;
 import com.codenvy.resource.spi.impl.ResourceImpl;
@@ -76,7 +80,7 @@ public class LicenseManagerTest {
         when(resourcesProvider.getResources(eq("account123"))).thenReturn(singletonList(providedResource));
         when(resourceAggregator.aggregateByType(any())).thenReturn(ImmutableMap.of(reducedResource.getType(), reducedResource));
 
-        final LicenseImpl license = licenseManager.getByAccount("account123");
+        final License license = licenseManager.getByAccount("account123");
 
         verify(resourcesProvider).getResources(eq("account123"));
         verify(resourceAggregator).aggregateByType(eq(singletonList(testResource)));

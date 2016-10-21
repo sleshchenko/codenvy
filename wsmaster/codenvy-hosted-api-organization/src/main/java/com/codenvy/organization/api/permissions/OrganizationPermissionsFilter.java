@@ -43,8 +43,9 @@ import static com.codenvy.organization.api.permissions.OrganizationDomain.MANAGE
  * @author Sergii Leschenko
  */
 @Filter
-@Path("/organization{path:(/.*)?}")
+@Path("/organization{path:(?!/resource)(/.*)?}")
 public class OrganizationPermissionsFilter extends CheMethodInvokerFilter {
+    // action of system domain for granting admins ability to work with foreign organizations
     public static final String MANAGE_ORGANIZATIONS_ACTION = "manageOrganizations";
 
     @Inject
