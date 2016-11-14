@@ -62,7 +62,7 @@ import static org.testng.Assert.assertEquals;
  *
  * @author Sergii Leschenko
  */
-@Listeners(value = {EverrestJetty.class, MockitoTestNGListener.class})
+@Listeners({EverrestJetty.class, MockitoTestNGListener.class})
 public class OrganizationServiceTest {
 
     private static final String CURRENT_USER_ID = "user123";

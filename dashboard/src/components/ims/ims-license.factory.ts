@@ -55,7 +55,7 @@ export class ImsLicenseApi {
     };
 
     // default number of free users
-    this.numberOfFreeUsers = 3;
+    this.numberOfFreeUsers = 5;
 
     // default license legality
     this.licenseLegality = {value: true};

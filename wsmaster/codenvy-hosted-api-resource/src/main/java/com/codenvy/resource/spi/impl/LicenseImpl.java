@@ -15,24 +15,42 @@
 package com.codenvy.resource.spi.impl;
 
 import com.codenvy.resource.model.License;
+import com.codenvy.resource.model.ProvidedResources;
+import com.codenvy.resource.model.Resource;
 import com.google.common.base.Objects;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Sergii Leschenko
  */
 public class LicenseImpl implements License {
-    private final String                      accountId;
-    private final List<ProvidedResourcesImpl> resourcesDetails;
-    private final List<ResourceImpl>          totalResources;
+    private String                      accountId;
+    private List<ProvidedResourcesImpl> resourcesDetails;
+    private List<ResourceImpl>          totalResources;
+
+    public LicenseImpl(License license) {
+        this(license.getAccountId(),
+             license.getResourcesDetails(),
+             license.getTotalResources());
+    }
 
     public LicenseImpl(String owner,
-                       List<ProvidedResourcesImpl> resourcesDetails,
-                       List<ResourceImpl> totalResources) {
+                       List<? extends ProvidedResources> resourcesDetails,
+                       List<? extends Resource> totalResources) {
         this.accountId = owner;
-        this.resourcesDetails = resourcesDetails;
-        this.totalResources = totalResources;
+        if (resourcesDetails != null) {
+            this.resourcesDetails = resourcesDetails.stream()
+                                                    .map(ProvidedResourcesImpl::new)
+                                                    .collect(Collectors.toList());
+        }
+        if (totalResources != null) {
+            this.totalResources = totalResources.stream()
+                                                .map(ResourceImpl::new)
+                                                .collect(Collectors.toList());
+        }
     }
 
     @Override
@@ -42,11 +60,17 @@ public class LicenseImpl implements License {
 
     @Override
     public List<ProvidedResourcesImpl> getResourcesDetails() {
+        if (resourcesDetails == null) {
+            resourcesDetails = new ArrayList<>();
+        }
         return resourcesDetails;
     }
 
     @Override
     public List<ResourceImpl> getTotalResources() {
+        if (totalResources == null) {
+            totalResources = new ArrayList<>();
+        }
         return totalResources;
     }
 

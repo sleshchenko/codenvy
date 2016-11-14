@@ -24,8 +24,6 @@ import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.core.notification.EventSubscriber;
-import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
-import org.eclipse.che.api.workspace.server.spi.WorkspaceDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +132,7 @@ public class JpaFreeResourcesLimitDao implements FreeResourcesLimitDao {
     @Singleton
     public static class RemoveFreeResourcesLimitBeforeAccountRemovedEventSubscriber implements EventSubscriber<BeforeAccountRemovedEvent> {
         @Inject
-        private EventService eventService;
+        private EventService          eventService;
         @Inject
         private FreeResourcesLimitDao limitDao;
 
@@ -153,7 +151,7 @@ public class JpaFreeResourcesLimitDao implements FreeResourcesLimitDao {
             try {
                 limitDao.remove(event.getAccount().getId());
             } catch (Exception x) {
-                LOG.error(format("Couldn't remove workspaces before account '%s' is removed", event.getAccount().getId()), x);
+                LOG.error(format("Couldn't remove free resources limit before account '%s' is removed", event.getAccount().getId()), x);
             }
         }
     }
