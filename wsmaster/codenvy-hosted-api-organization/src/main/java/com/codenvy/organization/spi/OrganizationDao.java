@@ -64,10 +64,12 @@ public interface OrganizationDao {
      *         organization id
      * @throws NullPointerException
      *         when {@code organizationId} is null
+     * @throws ConflictException
+     *         when any conflict occurs during cascade removing of related to organization data
      * @throws ServerException
      *         when any other error occurs during organization removing
      */
-    void remove(String organizationId) throws ServerException;
+    void remove(String organizationId) throws ServerException, ConflictException;
 
     /**
      * Gets organization by identifier.

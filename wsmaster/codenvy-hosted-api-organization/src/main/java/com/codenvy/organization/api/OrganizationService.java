@@ -102,9 +102,9 @@ public class OrganizationService extends Service {
                                   String organizationId,
                                   @ApiParam(value = "Organization to update", required = true)
                                   OrganizationDto organization) throws BadRequestException,
-                                                                       ConflictException,
-                                                                       NotFoundException,
-                                                                       ServerException {
+                                                                               ConflictException,
+                                                                               NotFoundException,
+                                                                               ServerException {
         organizationValidator.checkOrganization(organization);
         return linksInjector.injectLinks(asDto(organizationManager.update(organizationId, organization)),
                                          getServiceContext());
@@ -114,9 +114,10 @@ public class OrganizationService extends Service {
     @Path("/{id}")
     @ApiOperation("Remove organization with given id")
     @ApiResponses({@ApiResponse(code = 204, message = "The organization successfully removed"),
+                   @ApiResponse(code = 409, message = "When any conflict occurs during cascade removing of related to organization data"),
                    @ApiResponse(code = 500, message = "Internal server error occurred")})
     public void remove(@ApiParam("Organization id")
-                       @PathParam("id") String organization) throws ServerException {
+                       @PathParam("id") String organization) throws ConflictException, ServerException {
         organizationManager.remove(organization);
     }
 

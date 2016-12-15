@@ -20,12 +20,13 @@ import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.google.inject.persist.Transactional;
 
+import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.notification.EventService;
-import org.eclipse.che.core.db.event.CascadeEventSubscriber;
+import org.eclipse.che.core.db.cascade.CascadeEventService;
+import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
 import org.eclipse.che.core.db.jpa.DuplicateKeyException;
 
 import javax.annotation.PostConstruct;
@@ -50,10 +51,10 @@ import static java.util.Objects.requireNonNull;
 public class JpaOrganizationDao implements OrganizationDao {
 
     private final Provider<EntityManager> managerProvider;
-    private final EventService            eventService;
+    private final CascadeEventService     eventService;
 
     @Inject
-    public JpaOrganizationDao(Provider<EntityManager> managerProvider, EventService eventService) {
+    public JpaOrganizationDao(Provider<EntityManager> managerProvider, CascadeEventService eventService) {
         this.managerProvider = managerProvider;
         this.eventService = eventService;
     }
@@ -63,7 +64,6 @@ public class JpaOrganizationDao implements OrganizationDao {
         requireNonNull(organization, "Required non-null organization");
         try {
             doCreate(organization);
-            eventService.publish(new OrganizationPersistedEvent(organization));
         } catch (DuplicateKeyException e) {
             throw new ConflictException("Organization with such id or name already exists");
         } catch (RuntimeException x) {
@@ -84,7 +84,7 @@ public class JpaOrganizationDao implements OrganizationDao {
     }
 
     @Override
-    public void remove(String organizationId) throws ServerException {
+    public void remove(String organizationId) throws ConflictException, ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         try {
             doRemove(organizationId);
@@ -147,9 +147,13 @@ public class JpaOrganizationDao implements OrganizationDao {
         }
     }
 
-    @Transactional
-    protected void doCreate(OrganizationImpl organization) {
-        managerProvider.get().persist(organization);
+    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
+    protected void doCreate(OrganizationImpl organization) throws ConflictException, ServerException {
+        EntityManager manager = managerProvider.get();
+        manager.persist(organization);
+        manager.flush();
+        //TODO Add test
+        eventService.publish(new OrganizationPersistedEvent(organization));
     }
 
     @Transactional
@@ -159,13 +163,15 @@ public class JpaOrganizationDao implements OrganizationDao {
             throw new NotFoundException(format("Couldn't update organization with id '%s' because it doesn't exist", update.getId()));
         }
         manager.merge(update);
+        manager.flush();
     }
 
-    @Transactional
-    protected void doRemove(String organizationId) {
+    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
+    protected void doRemove(String organizationId) throws ConflictException, ServerException {
         final EntityManager manager = managerProvider.get();
         final OrganizationImpl organization = manager.find(OrganizationImpl.class, organizationId);
         if (organization != null) {
+            //TODO Add test
             eventService.publish(new BeforeOrganizationRemovedEvent(new OrganizationImpl(organization)));
             manager.remove(organization);
             manager.flush();
@@ -178,7 +184,7 @@ public class JpaOrganizationDao implements OrganizationDao {
         private static final int PAGE_SIZE = 100;
 
         @Inject
-        private EventService eventService;
+        private CascadeEventService eventService;
 
         @Inject
         private OrganizationDao organizationDao;
@@ -194,7 +200,7 @@ public class JpaOrganizationDao implements OrganizationDao {
         }
 
         @Override
-        public void onCascadeEvent(BeforeOrganizationRemovedEvent event) throws Exception {
+        public void onCascadeEvent(BeforeOrganizationRemovedEvent event) throws ApiException {
             removeSuborganizations(event.getOrganization().getId(), PAGE_SIZE);
         }
 
@@ -206,7 +212,7 @@ public class JpaOrganizationDao implements OrganizationDao {
          * @param pageSize
          *         number of items which should removed by one request
          */
-        void removeSuborganizations(String organizationId, int pageSize) throws ServerException {
+        void removeSuborganizations(String organizationId, int pageSize) throws ConflictException, ServerException {
             Page<OrganizationImpl> suborganizationsPage;
             do {
                 // skip count always equals to 0 because elements will be shifted after removing previous items

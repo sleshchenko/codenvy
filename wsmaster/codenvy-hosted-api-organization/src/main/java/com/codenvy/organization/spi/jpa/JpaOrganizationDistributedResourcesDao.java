@@ -22,8 +22,8 @@ import com.google.inject.persist.Transactional;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.core.notification.EventSubscriber;
+import org.eclipse.che.core.db.cascade.CascadeEventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +125,7 @@ public class JpaOrganizationDistributedResourcesDao implements OrganizationDistr
         OrganizationDistributedResourcesImpl distributedResources = manager.find(OrganizationDistributedResourcesImpl.class, id);
         if (distributedResources != null) {
             manager.remove(distributedResources);
+            manager.flush();
         }
     }
 
@@ -139,12 +140,13 @@ public class JpaOrganizationDistributedResourcesDao implements OrganizationDistr
             existingDistributedResources.getResources().clear();
             existingDistributedResources.getResources().addAll(distributedResources.getResources());
         }
+        manager.flush();
     }
 
     @Singleton
     public static class RemoveOrganizationDistributedResourcesSubscriber implements EventSubscriber<BeforeOrganizationRemovedEvent> {
         @Inject
-        private EventService                        eventService;
+        private CascadeEventService                 eventService;
         @Inject
         private OrganizationDistributedResourcesDao organizationDistributedResourcesDao;
 
