@@ -18,9 +18,11 @@ import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 
+import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.core.notification.EventSubscriber;
+import org.eclipse.che.api.user.server.UserManager;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +43,15 @@ public class OrganizationCreatorPermissionsProvider implements EventSubscriber<P
 
     private final MemberDao    memberDao;
     private final EventService eventService;
+    private final UserManager  userManager;
 
     @Inject
-    public OrganizationCreatorPermissionsProvider(EventService eventService, MemberDao memberDao) {
+    public OrganizationCreatorPermissionsProvider(EventService eventService,
+                                                  MemberDao memberDao,
+                                                  UserManager userManager) {
         this.memberDao = memberDao;
         this.eventService = eventService;
+        this.userManager = userManager;
     }
 
     @PostConstruct
@@ -60,12 +66,21 @@ public class OrganizationCreatorPermissionsProvider implements EventSubscriber<P
 
     @Override
     public void onEvent(PostOrganizationPersistedEvent event) {
-        try {
-            memberDao.store(new MemberImpl(EnvironmentContext.getCurrent().getSubject().getUserId(),
-                                           event.getOrganization().getId(),
-                                           OrganizationDomain.getActions()));
-        } catch (ServerException e) {
-            LOG.error("Can't add creator's permissions for organization with id '" + event.getOrganization().getId() + "'", e);
+        if (EnvironmentContext.getCurrent().getSubject() != null) {
+            try {
+                userManager.getByName(event.getOrganization().getName());
+                return;
+            } catch (NotFoundException e) {
+                try {
+                    memberDao.store(new MemberImpl(EnvironmentContext.getCurrent().getSubject().getUserId(),
+                                                   event.getOrganization().getId(),
+                                                   OrganizationDomain.getActions()));
+                } catch (ServerException e1) {
+                    LOG.error("Can't add creator's permissions for organization with id '" + event.getOrganization().getId() + "'", e);
+                }
+            } catch (ServerException e) {
+                LOG.error("Can't add creator's permissions for organization with id '" + event.getOrganization().getId() + "'", e);
+            }
         }
     }
 }
