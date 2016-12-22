@@ -23,7 +23,6 @@ import org.eclipse.che.account.shared.model.Account;
 import org.eclipse.che.api.core.ForbiddenException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
 import org.eclipse.che.api.workspace.server.WorkspaceService;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
@@ -195,11 +194,7 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
 
         final Account account = accountManager.getByName(namespace);
 
-        if (UserImpl.PERSONAL_ACCOUNT.equals(account.getType())) {
-            if (!account.getName().equals(currentSubject.getUserName())) {
-                throw new ForbiddenException("User is not authorized to use given namespace");
-            }
-        } else if (ORGANIZATIONAL_ACCOUNT.equals(account.getType())) {
+        if (ORGANIZATIONAL_ACCOUNT.equals(account.getType())) {
             boolean authorized = false;
             for (String action : actions) {
                 if (authorized = currentSubject.hasPermission(OrganizationDomain.DOMAIN_ID, account.getId(), action)) {

@@ -25,7 +25,6 @@ import org.eclipse.che.api.core.model.user.User;
 import org.eclipse.che.api.core.rest.ApiExceptionMapper;
 import org.eclipse.che.api.core.rest.shared.dto.ServiceError;
 import org.eclipse.che.api.environment.server.MachineService;
-import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
 import org.eclipse.che.api.workspace.server.WorkspaceService;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
@@ -679,15 +678,6 @@ public class WorkspacePermissionsFilterTest {
         doCallRealMethod().when(permissionsFilter).checkNamespaceAccess(any(), any());
 
         permissionsFilter.checkNamespaceAccess(subject, null);
-    }
-
-    @Test
-    public void shouldNotThrowExceptionWhenNamespaceEqualsToPersonalAccountNameOfUserOnNamespaceAccessChecking() throws Exception {
-        when(account.getName()).thenReturn(USERNAME);
-        when(account.getType()).thenReturn(UserImpl.PERSONAL_ACCOUNT);
-        doCallRealMethod().when(permissionsFilter).checkNamespaceAccess(any(), any());
-
-        permissionsFilter.checkNamespaceAccess(subject, USERNAME);
     }
 
     @Test(expectedExceptions = ForbiddenException.class)
