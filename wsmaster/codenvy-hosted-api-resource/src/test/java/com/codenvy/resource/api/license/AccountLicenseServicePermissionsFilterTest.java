@@ -14,8 +14,9 @@
  */
 package com.codenvy.resource.api.license;
 
-import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
-import com.google.common.collect.ImmutableSet;
+import com.codenvy.api.permission.server.account.AccountAction;
+import com.codenvy.api.permission.server.account.AccountPermissionsChecker;
+import com.google.common.collect.ImmutableMap;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
@@ -45,6 +46,7 @@ import static org.everrest.assured.JettyHttpServer.ADMIN_USER_NAME;
 import static org.everrest.assured.JettyHttpServer.ADMIN_USER_PASSWORD;
 import static org.everrest.assured.JettyHttpServer.SECURE_PATH;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -76,7 +78,7 @@ public class AccountLicenseServicePermissionsFilterTest {
     private static Subject subject;
 
     @Mock
-    private ResourcesPermissionsChecker checker;
+    private AccountPermissionsChecker checker;
 
     private LicenseServicePermissionsFilter filter;
 
@@ -84,11 +86,10 @@ public class AccountLicenseServicePermissionsFilterTest {
     public void setUp() throws Exception {
         when(accountManager.getById(any())).thenReturn(account);
 
-        when(checker.getAccountType()).thenReturn("test");
         when(account.getType()).thenReturn("test");
 
         filter = new LicenseServicePermissionsFilter(accountManager,
-                                                     ImmutableSet.of(checker));
+                                                     ImmutableMap.of("test", checker));
     }
 
     @Test
@@ -113,13 +114,13 @@ public class AccountLicenseServicePermissionsFilterTest {
                .when()
                .get(SECURE_PATH + "/license/account/account123");
 
-        verify(checker).checkResourcesVisibility("account123");
+        verify(checker).checkPermissions("account123", AccountAction.SEE_RESOURCE_INFORMATION);
         verify(service).getLicense("account123");
     }
 
     @Test(dataProvider = "coveredPaths")
     public void shouldDenyRequestWhenUserDoesNotHasPermissionsToSeeLicense(String path) throws Exception {
-        doThrow(new ForbiddenException("Forbidden")).when(checker).checkResourcesVisibility(any());
+        doThrow(new ForbiddenException("Forbidden")).when(checker).checkPermissions(anyString(), any());
 
         given().auth()
                .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
@@ -128,7 +129,7 @@ public class AccountLicenseServicePermissionsFilterTest {
                .when()
                .get(SECURE_PATH + path);
 
-        verify(checker).checkResourcesVisibility("account123");
+        verify(checker).checkPermissions("account123", AccountAction.SEE_RESOURCE_INFORMATION);
     }
 
     @Test(dataProvider = "coveredPaths")

@@ -17,6 +17,7 @@ package com.codenvy.api.workspace.server;
 import com.codenvy.api.machine.server.filters.RecipePermissionsFilter;
 import com.codenvy.api.machine.server.recipe.RecipeCreatorPermissionsProvider;
 import com.codenvy.api.permission.server.SuperPrivilegesChecker;
+import com.codenvy.api.permission.server.account.AccountPermissionsChecker;
 import com.codenvy.api.permission.shared.model.PermissionsDomain;
 import com.codenvy.api.workspace.server.filters.RecipeScriptDownloadPermissionFilter;
 import com.codenvy.api.workspace.server.filters.SetPublicPermissionsFilter;
@@ -24,6 +25,7 @@ import com.codenvy.api.workspace.server.filters.StackPermissionsFilter;
 import com.codenvy.api.workspace.server.filters.WorkspacePermissionsFilter;
 import com.codenvy.api.workspace.server.stack.StackCreatorPermissionsProvider;
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 
@@ -45,5 +47,8 @@ public class WorkspaceApiModule extends AbstractModule {
 
         Multibinder.newSetBinder(binder(), PermissionsDomain.class, Names.named(SuperPrivilegesChecker.SUPER_PRIVILEGED_DOMAINS))
                    .addBinding().to(WorkspaceDomain.class);
+
+        //initialize empty map binder
+        MapBinder.newMapBinder(binder(), String.class, AccountPermissionsChecker.class);
     }
 }
