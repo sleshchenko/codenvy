@@ -33,6 +33,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
+ * //TODO Revise this class
+ *
  * @author Sergii Leschenko
  */
 @Singleton
@@ -40,9 +42,9 @@ public class PersonalOrganizationProvider {
     private final OrganizationManager             organizationManager;
     private final EventService                    eventService;
     private final MemberDao                       memberDao;
-    private       PersonalOrganizationCreator     organizationCreator;
-    private       PersonalOrganizationNameUpdater organizationNameUpdater;
-    private       PersonalOrganizationRemover     organizationRemover;
+    private final PersonalOrganizationCreator     organizationCreator;
+    private final PersonalOrganizationNameUpdater organizationNameUpdater;
+    private final PersonalOrganizationRemover     organizationRemover;
 
     @Inject
     public PersonalOrganizationProvider(OrganizationManager organizationManager,
