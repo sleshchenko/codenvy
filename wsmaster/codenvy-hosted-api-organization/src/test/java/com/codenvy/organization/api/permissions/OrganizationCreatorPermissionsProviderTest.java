@@ -32,6 +32,8 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 
 /**
+ * TODO Fix test
+ *
  * Tests for {@link OrganizationCreatorPermissionsProvider}
  *
  * @author Sergii Leschenko

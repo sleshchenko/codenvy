@@ -187,6 +187,7 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
     void checkNamespaceAccess(Subject currentSubject, @Nullable String namespace, String... actions) throws ForbiddenException,
                                                                                                             NotFoundException,
                                                                                                             ServerException {
+        //TODO Check tests
         if (namespace == null) {
             //namespace will be defined as username by default
             return;

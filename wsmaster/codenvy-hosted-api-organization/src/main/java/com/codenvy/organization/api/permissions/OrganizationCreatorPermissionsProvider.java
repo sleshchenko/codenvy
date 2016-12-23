@@ -18,14 +18,14 @@ import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 
+import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.notification.EventService;
-import org.eclipse.che.api.core.notification.EventSubscriber;
+import org.eclipse.che.api.core.model.user.User;
 import org.eclipse.che.api.user.server.UserManager;
 import org.eclipse.che.commons.env.EnvironmentContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.eclipse.che.core.db.cascade.CascadeEventService;
+import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -38,15 +38,13 @@ import javax.inject.Singleton;
  * @author Sergii Leschenko
  */
 @Singleton
-public class OrganizationCreatorPermissionsProvider implements EventSubscriber<PostOrganizationPersistedEvent> {
-    private static final Logger LOG = LoggerFactory.getLogger(OrganizationCreatorPermissionsProvider.class);
-
-    private final MemberDao    memberDao;
-    private final EventService eventService;
-    private final UserManager  userManager;
+public class OrganizationCreatorPermissionsProvider extends CascadeEventSubscriber<PostOrganizationPersistedEvent> {
+    private final MemberDao           memberDao;
+    private final CascadeEventService eventService;
+    private final UserManager         userManager;
 
     @Inject
-    public OrganizationCreatorPermissionsProvider(EventService eventService,
+    public OrganizationCreatorPermissionsProvider(CascadeEventService eventService,
                                                   MemberDao memberDao,
                                                   UserManager userManager) {
         this.memberDao = memberDao;
@@ -65,22 +63,21 @@ public class OrganizationCreatorPermissionsProvider implements EventSubscriber<P
     }
 
     @Override
-    public void onEvent(PostOrganizationPersistedEvent event) {
-        if (EnvironmentContext.getCurrent().getSubject() != null) {
-            try {
-                userManager.getByName(event.getOrganization().getName());
-                return;
-            } catch (NotFoundException e) {
-                try {
-                    memberDao.store(new MemberImpl(EnvironmentContext.getCurrent().getSubject().getUserId(),
-                                                   event.getOrganization().getId(),
-                                                   OrganizationDomain.getActions()));
-                } catch (ServerException e1) {
-                    LOG.error("Can't add creator's permissions for organization with id '" + event.getOrganization().getId() + "'", e);
-                }
-            } catch (ServerException e) {
-                LOG.error("Can't add creator's permissions for organization with id '" + event.getOrganization().getId() + "'", e);
-            }
+    public void onCascadeEvent(PostOrganizationPersistedEvent event) throws ApiException {
+        try {
+            User user = userManager.getByName(event.getOrganization().getName());
+            //personal organization creation
+            createPermissions(user.getId(), event.getOrganization().getId());
+        } catch (NotFoundException e) {
+            //normal organization creation
+            createPermissions(EnvironmentContext.getCurrent().getSubject().getUserId(),
+                              event.getOrganization().getId());
         }
+    }
+
+    private void createPermissions(String userId, String organizationId) throws ServerException {
+        memberDao.store(new MemberImpl(userId,
+                                       organizationId,
+                                       OrganizationDomain.getActions()));
     }
 }
