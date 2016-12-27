@@ -18,7 +18,6 @@ package com.codenvy.api.machine.server.jpa.listener;
 import com.codenvy.api.machine.server.jpa.JpaRecipePermissionsDao;
 import com.codenvy.api.permission.server.jpa.listener.RemovePermissionsOnLastUserRemovedEventSubscriber;
 
-import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.machine.server.jpa.JpaRecipeDao;
 import org.eclipse.che.api.user.server.model.impl.UserImpl;
@@ -40,7 +39,7 @@ public class RemoveRecipeOnLastUserRemovedEventSubscriber
     private JpaRecipeDao recipeDao;
 
     @Override
-    public void remove(String instanceId) throws ConflictException, ServerException{
+    public void remove(String instanceId) throws ServerException {
         recipeDao.remove(instanceId);
     }
 }

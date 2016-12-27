@@ -17,11 +17,10 @@ package com.codenvy.api.workspace.server.stack;
 import com.codenvy.api.permission.server.PermissionsManager;
 import com.google.inject.Inject;
 
-import org.eclipse.che.api.core.ApiException;
+import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.workspace.server.event.StackPersistedEvent;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.subject.Subject;
-import org.eclipse.che.core.db.cascade.CascadeEventService;
 import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
 
 import javax.annotation.PostConstruct;
@@ -39,18 +38,18 @@ import javax.inject.Singleton;
 public class StackCreatorPermissionsProvider extends CascadeEventSubscriber<StackPersistedEvent> {
 
     @Inject
-    private PermissionsManager permManager;
+    private PermissionsManager permissionsManager;
 
     @Inject
-    private CascadeEventService eventService;
+    private EventService eventService;
 
     @Override
-    public void onCascadeEvent(StackPersistedEvent event) throws ApiException {
+    public void onCascadeEvent(StackPersistedEvent event) throws Exception {
         final Subject subject = EnvironmentContext.getCurrent().getSubject();
         if (subject != null) {
-            permManager.storePermission(new StackPermissionsImpl(subject.getUserId(),
-                                                                 event.getStack().getId(),
-                                                                 StackDomain.getActions()));
+            permissionsManager.storePermission(new StackPermissionsImpl(subject.getUserId(),
+                                                                        event.getStack().getId(),
+                                                                        StackDomain.getActions()));
         }
     }
 
