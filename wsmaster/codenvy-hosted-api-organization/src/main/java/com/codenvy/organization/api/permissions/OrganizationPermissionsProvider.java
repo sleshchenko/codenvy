@@ -18,7 +18,6 @@ import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 
-import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.user.User;
