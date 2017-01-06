@@ -80,11 +80,11 @@ public class PersonalOrganizationProvider {
     public class PersonalOrganizationNameUpdater extends CascadeEventSubscriber<PostUserUpdatedEvent> {
         @Override
         public void onCascadeEvent(PostUserUpdatedEvent event) throws ApiException {
-            String oldUsername = event.getOriginal().getName();
-            String newUserName = event.getUpdated().getName();
+            String oldUsername = event.getOriginalUser().getName();
+            String newUserName = event.getUpdatedUser().getName();
             if (!oldUsername.equals(newUserName)) {
                 OrganizationImpl personalOrganization = new OrganizationImpl(organizationManager.getByName(oldUsername));
-                personalOrganization.setName(event.getUpdated().getName());
+                personalOrganization.setName(newUserName);
                 organizationManager.update(personalOrganization.getId(), personalOrganization);
             }
         }

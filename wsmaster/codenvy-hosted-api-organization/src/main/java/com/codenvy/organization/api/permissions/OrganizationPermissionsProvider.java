@@ -22,9 +22,9 @@ import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.user.User;
+import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.user.server.UserManager;
 import org.eclipse.che.commons.env.EnvironmentContext;
-import org.eclipse.che.core.db.cascade.CascadeEventService;
 import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
 
 import javax.annotation.PostConstruct;
@@ -38,15 +38,15 @@ import javax.inject.Singleton;
  * @author Sergii Leschenko
  */
 @Singleton
-public class OrganizationCreatorPermissionsProvider extends CascadeEventSubscriber<PostOrganizationPersistedEvent> {
-    private final MemberDao           memberDao;
-    private final CascadeEventService eventService;
-    private final UserManager         userManager;
+public class OrganizationPermissionsProvider extends CascadeEventSubscriber<PostOrganizationPersistedEvent> {
+    private final MemberDao    memberDao;
+    private final EventService eventService;
+    private final UserManager  userManager;
 
     @Inject
-    public OrganizationCreatorPermissionsProvider(CascadeEventService eventService,
-                                                  MemberDao memberDao,
-                                                  UserManager userManager) {
+    public OrganizationPermissionsProvider(EventService eventService,
+                                           MemberDao memberDao,
+                                           UserManager userManager) {
         this.memberDao = memberDao;
         this.eventService = eventService;
         this.userManager = userManager;
@@ -63,19 +63,19 @@ public class OrganizationCreatorPermissionsProvider extends CascadeEventSubscrib
     }
 
     @Override
-    public void onCascadeEvent(PostOrganizationPersistedEvent event) throws ApiException {
+    public void onCascadeEvent(PostOrganizationPersistedEvent event) throws ServerException {
         try {
             User user = userManager.getByName(event.getOrganization().getName());
             //personal organization creation
-            createPermissions(user.getId(), event.getOrganization().getId());
+            grantPermissions(user.getId(), event.getOrganization().getId());
         } catch (NotFoundException e) {
             //normal organization creation
-            createPermissions(EnvironmentContext.getCurrent().getSubject().getUserId(),
-                              event.getOrganization().getId());
+            grantPermissions(EnvironmentContext.getCurrent().getSubject().getUserId(),
+                             event.getOrganization().getId());
         }
     }
 
-    private void createPermissions(String userId, String organizationId) throws ServerException {
+    private void grantPermissions(String userId, String organizationId) throws ServerException {
         memberDao.store(new MemberImpl(userId,
                                        organizationId,
                                        OrganizationDomain.getActions()));

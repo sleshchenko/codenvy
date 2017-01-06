@@ -15,7 +15,7 @@
 package com.codenvy.organization.api;
 
 import com.codenvy.api.permission.server.SystemDomain;
-import com.codenvy.organization.api.permissions.OrganizationCreatorPermissionsProvider;
+import com.codenvy.organization.api.permissions.OrganizationPermissionsProvider;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;
 import com.codenvy.organization.api.permissions.OrganizationResourceDistributionServicePermissionsFilter;
 import com.codenvy.organization.api.resource.DefaultOrganizationResourcesProvider;
@@ -42,7 +42,7 @@ public class OrganizationApiModule extends AbstractModule {
         bind(OrganizationService.class);
         bind(OrganizationPermissionsFilter.class);
 
-        bind(OrganizationCreatorPermissionsProvider.class).asEagerSingleton();
+        bind(OrganizationPermissionsProvider.class).asEagerSingleton();
 
         Multibinder.newSetBinder(binder(),
                                  String.class,
@@ -68,7 +68,5 @@ public class OrganizationApiModule extends AbstractModule {
         bind(OrganizationResourceDistributionServicePermissionsFilter.class);
 
         bind(PersonalOrganizationProvider.class).asEagerSingleton();
-
-        bind(PersonalAccountConverter.class).asEagerSingleton();
     }
 }

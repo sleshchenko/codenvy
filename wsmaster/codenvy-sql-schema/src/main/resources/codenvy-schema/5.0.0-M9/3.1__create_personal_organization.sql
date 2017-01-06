@@ -29,7 +29,7 @@ SELECT id, id
 FROM Account
 WHERE name NOT LIKE 'tomigrate%';
 
--- TODO Add permissions for users in their personal organizations
+-- TODO Add permissions for users to their personal organizations
 
 -- Relink workspaces to new accounts
 UPDATE Workspace
