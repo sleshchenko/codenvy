@@ -34,19 +34,19 @@ import static org.mockito.Mockito.verify;
 /**
  * TODO Fix test
  *
- * Tests for {@link OrganizationCreatorPermissionsProvider}
+ * Tests for {@link OrganizationPermissionsProvider}
  *
  * @author Sergii Leschenko
  */
 @Listeners(MockitoTestNGListener.class)
-public class OrganizationCreatorPermissionsProviderTest {
+public class OrganizationPermissionsProviderTest {
     @Mock
     MemberDao    memberDao;
     @Mock
     EventService eventService;
 
     @InjectMocks
-    OrganizationCreatorPermissionsProvider permissionsProvider;
+    OrganizationPermissionsProvider permissionsProvider;
 
     @Test
     public void shouldSelfSubscribe() {

@@ -99,6 +99,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
 import java.util.Map;
 import java.util.Set;
