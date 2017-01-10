@@ -29,9 +29,12 @@ SELECT id, id
 FROM Account
 WHERE name NOT LIKE 'tomigrate%';
 
-INSERT INTO Member(organizationid, userid)
+-- TODO Fix adding members
+INSERT INTO Member(id, organizationid, userid)
 SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId, id
 FROM Usr
+
+-- TODO Add actions
 
 -- Relink workspaces to new accounts
 UPDATE Workspace

@@ -27,6 +27,10 @@
     <name>Codenvy :: Hosted :: Integration Cascade</name>
     <dependencies>
         <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.codenvy.onpremises.wsmaster</groupId>
             <artifactId>codenvy-hosted-api-machine</artifactId>
         </dependency>
