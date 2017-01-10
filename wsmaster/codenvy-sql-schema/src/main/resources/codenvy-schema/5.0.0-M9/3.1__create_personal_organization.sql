@@ -29,14 +29,25 @@ SELECT id, id
 FROM Account
 WHERE name NOT LIKE 'tomigrate%';
 
--- TODO Add permissions for users to their personal organizations
+INSERT INTO Member(organizationid, userid)
+SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId, id
+FROM Usr
 
 -- Relink workspaces to new accounts
 UPDATE Workspace
-SET accountid=SUBSTRING(accountid, 4, LENGTH(accountid))
+SET accountid=CONCAT('organization', SUBSTRING(accountid, 4, LENGTH(accountid)))
 WHERE accountid like 'user%';
 
--- TODO Migrate free resources limit here
+-- Migrate free resources limits
+INSERT INTO Free_resources_limit
+SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as id
+FROM Account
+WHERE name LIKE 'tomigrate%';
+
+-- Relink workspaces to new accounts
+UPDATE free_resources_limit_resource
+SET accountid=CONCAT('organization', SUBSTRING(accountid, 4, LENGTH(accountid)))
+WHERE accountid like 'user%';
 
 -- Remove old accounts
 DELETE FROM ACCOUNT

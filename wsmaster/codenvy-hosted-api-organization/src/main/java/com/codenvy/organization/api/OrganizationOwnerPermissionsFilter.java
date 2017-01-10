@@ -31,7 +31,7 @@ import javax.inject.Inject;
 import javax.ws.rs.Path;
 
 /**
- * Restricts access to setting permissions of instance by users' setPermissions permission
+ * Restricts access to setting permissions for owner of organization
  *
  * @author Sergii Leschenko
  */
