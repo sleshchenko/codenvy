@@ -87,9 +87,9 @@ public class WorkerDaoTest {
         AccountImpl account = new AccountImpl("account1", "accountName", "test");
         accountRepository.createAll(Collections.singletonList(account));
         workspaceRepository.createAll(
-                Arrays.asList(new WorkspaceImpl("ws0", account, new WorkspaceConfigImpl("", "", "cfg0", null, null, null)),
-                              new WorkspaceImpl("ws1", account, new WorkspaceConfigImpl("", "", "cfg1", null, null, null)),
-                              new WorkspaceImpl("ws2", account, new WorkspaceConfigImpl("", "", "cfg2", null, null, null))));
+                Arrays.asList(new WorkspaceImpl("ws0", account, new WorkspaceConfigImpl("ws-name0", "", "cfg0", null, null, null)),
+                              new WorkspaceImpl("ws1", account, new WorkspaceConfigImpl("ws-name1", "", "cfg1", null, null, null)),
+                              new WorkspaceImpl("ws2", account, new WorkspaceConfigImpl("ws-name2", "", "cfg2", null, null, null))));
 
         workerRepository.createAll(Stream.of(workers)
                                          .map(WorkerImpl::new)
