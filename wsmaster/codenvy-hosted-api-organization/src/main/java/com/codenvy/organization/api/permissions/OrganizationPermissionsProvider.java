@@ -53,12 +53,12 @@ public class OrganizationPermissionsProvider extends CascadeEventSubscriber<Post
 
     @PostConstruct
     void subscribe() {
-        eventService.subscribe(this);
+        eventService.subscribe(this, PostOrganizationPersistedEvent.class);
     }
 
     @PreDestroy
     void unsubscribe() {
-        eventService.unsubscribe(this);
+        eventService.unsubscribe(this, PostOrganizationPersistedEvent.class);
     }
 
     @Override
