@@ -55,11 +55,11 @@ public class StackCreatorPermissionsProvider extends CascadeEventSubscriber<Stac
 
     @PostConstruct
     public void subscribe() {
-        eventService.subscribe(this);
+        eventService.subscribe(this, StackPersistedEvent.class);
     }
 
     @PreDestroy
     public void unsubscribe() {
-        eventService.unsubscribe(this);
+        eventService.unsubscribe(this, StackPersistedEvent.class);
     }
 }

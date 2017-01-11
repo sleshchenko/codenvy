@@ -38,6 +38,7 @@ import javax.ws.rs.Path;
 @Filter
 @Path("/permissions/{path:(/.*)?}")
 public class OrganizationOwnerPermissionsFilter extends CheMethodInvokerFilter {
+    //TODO Remove ability to rename, remove personal organization
     private final OrganizationManager organizationManager;
     private final UserManager         userManager;
 
