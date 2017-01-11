@@ -18,6 +18,8 @@ import com.codenvy.api.permission.server.SystemDomain;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsProvider;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;
 import com.codenvy.organization.api.permissions.OrganizationResourceDistributionServicePermissionsFilter;
+import com.codenvy.organization.api.permissions.PersonalOrganizationOwnerPermissionsFilter;
+import com.codenvy.organization.api.permissions.PersonalOrganizationPermissionsFilter;
 import com.codenvy.organization.api.resource.DefaultOrganizationResourcesProvider;
 import com.codenvy.organization.api.resource.OrganizationResourceLockKeyProvider;
 import com.codenvy.organization.api.resource.OrganizationResourcesDistributionService;
@@ -41,6 +43,9 @@ public class OrganizationApiModule extends AbstractModule {
     protected void configure() {
         bind(OrganizationService.class);
         bind(OrganizationPermissionsFilter.class);
+
+        bind(PersonalOrganizationOwnerPermissionsFilter.class);
+        bind(PersonalOrganizationPermissionsFilter.class);
 
         bind(OrganizationPermissionsProvider.class).asEagerSingleton();
 
