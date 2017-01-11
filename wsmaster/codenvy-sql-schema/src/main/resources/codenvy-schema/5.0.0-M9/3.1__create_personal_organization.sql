@@ -12,7 +12,7 @@
 -- is strictly forbidden unless prior written permission is obtained
 -- from Codenvy S.A..
 --
--- Prepate existing accounts to migration
+-- Prepare existing accounts to migration
 UPDATE Account
 SET name=CONCAT('tomigrate',name)
 WHERE id LIKE 'user%';
@@ -25,16 +25,24 @@ WHERE name LIKE 'tomigrate%';
 
 -- Create personal organizations
 INSERT INTO Organization(id, account_id)
-SELECT id, id
+SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id, CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id
 FROM Account
-WHERE name NOT LIKE 'tomigrate%';
+WHERE name LIKE 'tomigrate%';
 
 -- TODO Fix adding members
-INSERT INTO Member(id, organizationid, userid)
-SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId, id
+INSERT INTO member
+SELECT SUBSTRING(id, 4, length(id)) as memberId,
+       CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId,
+       id
 FROM Usr
+WHERE id LIKE 'user%';
 
--- TODO Add actions
+--setPermissions update delete manageSuborganizations manageResources createWorkspaces manageWorkspaces
+
+INSERT INTO Member_actions(member_Id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'set_permissions' as actions
+FROM Usr
+WHERE id LIKE 'user%';
 
 -- Relink workspaces to new accounts
 UPDATE Workspace
@@ -42,15 +50,19 @@ SET accountid=CONCAT('organization', SUBSTRING(accountid, 4, LENGTH(accountid)))
 WHERE accountid like 'user%';
 
 -- Migrate free resources limits
-INSERT INTO Free_resources_limit
+INSERT INTO freeresourceslimit
 SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as id
 FROM Account
 WHERE name LIKE 'tomigrate%';
 
--- Relink workspaces to new accounts
-UPDATE free_resources_limit_resource
-SET accountid=CONCAT('organization', SUBSTRING(accountid, 4, LENGTH(accountid)))
-WHERE accountid like 'user%';
+-- Relink resources to new limits
+UPDATE freeresourceslimit_resource
+SET freeresourceslimit_accountid=CONCAT('organization', SUBSTRING(freeresourceslimit_accountid, 4, LENGTH(freeresourceslimit_accountid)))
+WHERE freeresourceslimit_accountid like 'user%';
+
+-- Remove old free resources limits
+DELETE FROM freeresourceslimit
+WHERE accountid in (SELECT id FROM Account WHERE name LIKE 'tomigrate%');
 
 -- Remove old accounts
 DELETE FROM ACCOUNT
