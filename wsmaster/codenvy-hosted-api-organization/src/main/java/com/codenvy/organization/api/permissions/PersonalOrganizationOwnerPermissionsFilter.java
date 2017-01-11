@@ -12,9 +12,10 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.organization.api;
+package com.codenvy.organization.api.permissions;
 
 import com.codenvy.api.permission.shared.dto.PermissionsDto;
+import com.codenvy.organization.api.OrganizationManager;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.codenvy.organization.shared.model.Organization;
 
@@ -37,14 +38,13 @@ import javax.ws.rs.Path;
  */
 @Filter
 @Path("/permissions/{path:(/.*)?}")
-public class OrganizationOwnerPermissionsFilter extends CheMethodInvokerFilter {
-    //TODO Remove ability to rename, remove personal organization
+public class PersonalOrganizationOwnerPermissionsFilter extends CheMethodInvokerFilter {
     private final OrganizationManager organizationManager;
     private final UserManager         userManager;
 
     @Inject
-    public OrganizationOwnerPermissionsFilter(OrganizationManager organizationManager,
-                                              UserManager userManager) {
+    public PersonalOrganizationOwnerPermissionsFilter(OrganizationManager organizationManager,
+                                                      UserManager userManager) {
         this.organizationManager = organizationManager;
         this.userManager = userManager;
     }
