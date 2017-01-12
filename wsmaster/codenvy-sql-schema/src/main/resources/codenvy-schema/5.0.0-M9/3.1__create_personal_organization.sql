@@ -19,7 +19,7 @@ WHERE id LIKE 'user%';
 
 -- Create new accounts
 INSERT INTO Account
-SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as id, SUBSTRING(name, 10, length(name)), 'organizational' as type
+SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as newid, SUBSTRING(name, 10, length(name)), 'organizational' as type
 FROM Account
 WHERE name LIKE 'tomigrate%';
 
@@ -29,7 +29,7 @@ SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id, CONCAT('o
 FROM Account
 WHERE name LIKE 'tomigrate%';
 
--- TODO Fix adding members
+-- TODO Revise member id
 INSERT INTO member
 SELECT SUBSTRING(id, 4, length(id)) as memberId,
        CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId,
@@ -37,10 +37,35 @@ SELECT SUBSTRING(id, 4, length(id)) as memberId,
 FROM Usr
 WHERE id LIKE 'user%';
 
---setPermissions update delete manageSuborganizations manageResources createWorkspaces manageWorkspaces
+-- Add following actions for members:
+-- setPermissions, update, delete, manageSuborganizations, manageResources, createWorkspaces, manageWorkspaces.
 
 INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'set_permissions' as actions
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'setPermissions' as actions
+FROM Usr
+WHERE id LIKE 'user%';
+INSERT INTO Member_actions(member_Id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'update' as actions
+FROM Usr
+WHERE id LIKE 'user%';
+INSERT INTO Member_actions(member_Id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'delete' as actions
+FROM Usr
+WHERE id LIKE 'user%';
+INSERT INTO Member_actions(member_Id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'manageSuborganizations' as actions
+FROM Usr
+WHERE id LIKE 'user%';
+INSERT INTO Member_actions(member_Id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'manageResources' as actions
+FROM Usr
+WHERE id LIKE 'user%';
+INSERT INTO Member_actions(member_Id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'createWorkspaces' as actions
+FROM Usr
+WHERE id LIKE 'user%';
+INSERT INTO Member_actions(member_Id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as memberId, 'manageWorkspaces' as actions
 FROM Usr
 WHERE id LIKE 'user%';
 
@@ -51,9 +76,9 @@ WHERE accountid like 'user%';
 
 -- Migrate free resources limits
 INSERT INTO freeresourceslimit
-SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as id
-FROM Account
-WHERE name LIKE 'tomigrate%';
+SELECT CONCAT('organization', SUBSTRING(accountid, 4, length(accountid))) as accountid
+FROM freeresourceslimit
+WHERE accountid LIKE 'user%';
 
 -- Relink resources to new limits
 UPDATE freeresourceslimit_resource
@@ -64,6 +89,10 @@ WHERE freeresourceslimit_accountid like 'user%';
 DELETE FROM freeresourceslimit
 WHERE accountid in (SELECT id FROM Account WHERE name LIKE 'tomigrate%');
 
--- Remove old accounts
+-- Remove old accounts with disabled triggers to speed up
+ALTER TABLE ACCOUNT DISABLE TRIGGER ALL;
+
 DELETE FROM ACCOUNT
 WHERE name LIKE 'tomigrate%';
+
+ALTER TABLE ACCOUNT ENABLE TRIGGER ALL;
