@@ -12,10 +12,11 @@
 -- is strictly forbidden unless prior written permission is obtained
 -- from Codenvy S.A..
 --
+
 -- Prepare existing accounts to migration
 UPDATE Account
-SET name=CONCAT('tomigrate',name)
-WHERE id LIKE 'user%';
+SET name=CONCAT('tomigrate', name)
+WHERE id LIKE 'user%' or id LIKE 'User%';
 
 -- Create new accounts
 INSERT INTO Account
@@ -34,40 +35,26 @@ INSERT INTO member
 SELECT SUBSTRING(id, 4, length(id)) as memberId,
        CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId,
        id
-FROM Usr
-WHERE id LIKE 'user%';
+FROM Account
+WHERE name LIKE 'tomigrate%';
 
 -- Add following actions for members:
 -- setPermissions, update, delete, manageSuborganizations, manageResources, createWorkspaces, manageWorkspaces.
 
+CREATE TEMP TABLE Actions (action VARCHAR(255));
+
+INSERT INTO ACTIONS VALUES ('setPermissions'),
+                           ('update'),
+                           ('delete'),
+                           ('manageSuborganizations'),
+                           ('manageResources'),
+                           ('createWorkspaces'),
+                           ('manageWorkspaces');
+
 INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'setPermissions' as actions
-FROM Usr
-WHERE id LIKE 'user%';
-INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'update' as actions
-FROM Usr
-WHERE id LIKE 'user%';
-INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'delete' as actions
-FROM Usr
-WHERE id LIKE 'user%';
-INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'manageSuborganizations' as actions
-FROM Usr
-WHERE id LIKE 'user%';
-INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'manageResources' as actions
-FROM Usr
-WHERE id LIKE 'user%';
-INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'createWorkspaces' as actions
-FROM Usr
-WHERE id LIKE 'user%';
-INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, 'manageWorkspaces' as actions
-FROM Usr
-WHERE id LIKE 'user%';
+SELECT SUBSTRING(id, 4, length(id)) as memberId, action
+FROM Account as a, actions as orgActions
+WHERE a.name LIKE 'tomigrate%';
 
 -- Relink workspaces to new accounts
 UPDATE Workspace
@@ -88,11 +75,3 @@ WHERE freeresourceslimit_accountid like 'user%';
 -- Remove old free resources limits
 DELETE FROM freeresourceslimit
 WHERE accountid in (SELECT id FROM Account WHERE name LIKE 'tomigrate%');
-
--- Remove old accounts with disabled triggers to speed up
-ALTER TABLE ACCOUNT DISABLE TRIGGER ALL;
-
-DELETE FROM ACCOUNT
-WHERE name LIKE 'tomigrate%';
-
-ALTER TABLE ACCOUNT ENABLE TRIGGER ALL;
