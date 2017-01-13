@@ -68,7 +68,7 @@ public class OrganizationPermissionsProvider extends CascadeEventSubscriber<Post
             //personal organization creation
             grantPermissions(user.getId(), event.getOrganization().getId());
         } catch (NotFoundException e) {
-            //normal organization creation
+            //organization is created by user
             grantPermissions(EnvironmentContext.getCurrent().getSubject().getUserId(),
                              event.getOrganization().getId());
         }

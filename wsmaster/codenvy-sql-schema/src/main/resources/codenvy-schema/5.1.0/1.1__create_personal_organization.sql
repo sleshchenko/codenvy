@@ -22,13 +22,13 @@ WHERE id LIKE 'user%' or id LIKE 'User%';
 INSERT INTO Account
 SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as newid, SUBSTRING(name, 10, length(name)), 'organizational' as type
 FROM Account
-WHERE name LIKE 'tomigrate%';
+WHERE id LIKE 'user%' or id LIKE 'User%';
 
 -- Create personal organizations
 INSERT INTO Organization(id, account_id)
 SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id, CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id
 FROM Account
-WHERE name LIKE 'tomigrate%';
+WHERE id LIKE 'user%' or id LIKE 'User%';
 
 -- TODO Revise member id
 INSERT INTO member
@@ -36,7 +36,7 @@ SELECT SUBSTRING(id, 4, length(id)) as memberId,
        CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId,
        id
 FROM Account
-WHERE name LIKE 'tomigrate%';
+WHERE id LIKE 'user%' or id LIKE 'User%';
 
 -- Add following actions for members:
 -- setPermissions, update, delete, manageSuborganizations, manageResources, createWorkspaces, manageWorkspaces.
@@ -54,7 +54,7 @@ INSERT INTO ACTIONS VALUES ('setPermissions'),
 INSERT INTO Member_actions(member_Id, actions)
 SELECT SUBSTRING(id, 4, length(id)) as memberId, action
 FROM Account as a, actions as orgActions
-WHERE a.name LIKE 'tomigrate%';
+WHERE a.id LIKE 'user%' or a.id LIKE 'User%';
 
 -- Relink workspaces to new accounts
 UPDATE Workspace
@@ -70,8 +70,8 @@ WHERE accountid like 'user%' or accountid like 'User%';
 -- Relink resources to new limits
 UPDATE freeresourceslimit_resource
 SET freeresourceslimit_accountid=CONCAT('organization', SUBSTRING(freeresourceslimit_accountid, 4, LENGTH(freeresourceslimit_accountid)))
-WHERE accountid like 'user%' or accountid like 'User%';
+WHERE freeresourceslimit_accountid like 'user%' or freeresourceslimit_accountid like 'User%';
 
 -- Remove old free resources limits
 DELETE FROM freeresourceslimit
-WHERE accountid in (SELECT id FROM Account WHERE name LIKE 'tomigrate%');
+WHERE accountid in (SELECT id FROM Account WHERE id LIKE 'user%' or id LIKE 'User%');
