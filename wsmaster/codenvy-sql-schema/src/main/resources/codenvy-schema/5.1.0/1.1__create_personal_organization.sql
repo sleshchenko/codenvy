@@ -59,18 +59,18 @@ WHERE a.name LIKE 'tomigrate%';
 -- Relink workspaces to new accounts
 UPDATE Workspace
 SET accountid=CONCAT('organization', SUBSTRING(accountid, 4, LENGTH(accountid)))
-WHERE accountid like 'user%';
+WHERE accountid like 'user%' or accountid like 'User%';
 
 -- Migrate free resources limits
 INSERT INTO freeresourceslimit
 SELECT CONCAT('organization', SUBSTRING(accountid, 4, length(accountid))) as accountid
 FROM freeresourceslimit
-WHERE accountid LIKE 'user%';
+WHERE accountid like 'user%' or accountid like 'User%';
 
 -- Relink resources to new limits
 UPDATE freeresourceslimit_resource
 SET freeresourceslimit_accountid=CONCAT('organization', SUBSTRING(freeresourceslimit_accountid, 4, LENGTH(freeresourceslimit_accountid)))
-WHERE freeresourceslimit_accountid like 'user%';
+WHERE accountid like 'user%' or accountid like 'User%';
 
 -- Remove old free resources limits
 DELETE FROM freeresourceslimit
