@@ -13,6 +13,9 @@
 -- from Codenvy S.A..
 --
 
+-- admin@codenvy.onprem
+-- root-prod
+
 -- Rename existing account to make free old account's names
 UPDATE Account
 SET name=CONCAT('tomigrate', name)

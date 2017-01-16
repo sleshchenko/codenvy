@@ -12,14 +12,17 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.organization.api.permissions;
+package com.codenvy.organization.api.personal;
 
+import com.codenvy.api.permission.shared.dto.PermissionsDto;
 import com.codenvy.organization.api.OrganizationManager;
+import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.codenvy.organization.shared.model.Organization;
 
 import org.eclipse.che.api.core.ForbiddenException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
+import org.eclipse.che.api.core.model.user.User;
 import org.eclipse.che.api.user.server.UserManager;
 import org.eclipse.che.everrest.CheMethodInvokerFilter;
 import org.everrest.core.Filter;
@@ -29,22 +32,19 @@ import javax.inject.Inject;
 import javax.ws.rs.Path;
 
 /**
- * Restricts access to remove/rename personal organization
+ * Restricts access to setting permissions for owner of organization
  *
  * @author Sergii Leschenko
  */
 @Filter
-@Path("/organization{path:(?!/resource)(/.*)?}")
-public class PersonalOrganizationPermissionsFilter extends CheMethodInvokerFilter {
-    static final String UPDATE_METHOD = "update";
-    static final String REMOVE_METHOD = "remove";
-
+@Path("/permissions/{path:(/.*)?}")
+public class PersonalOrganizationOwnerPermissionsFilter extends CheMethodInvokerFilter {
     private final OrganizationManager organizationManager;
     private final UserManager         userManager;
 
     @Inject
-    public PersonalOrganizationPermissionsFilter(OrganizationManager organizationManager,
-                                                 UserManager userManager) {
+    public PersonalOrganizationOwnerPermissionsFilter(OrganizationManager organizationManager,
+                                                      UserManager userManager) {
         this.organizationManager = organizationManager;
         this.userManager = userManager;
     }
@@ -54,19 +54,37 @@ public class PersonalOrganizationPermissionsFilter extends CheMethodInvokerFilte
                                                                                                NotFoundException,
                                                                                                ServerException {
         final String methodName = genericResourceMethod.getMethod().getName();
+
+        final String domainId;
+        final String instanceId;
+        final String userId;
+
         switch (methodName) {
-            case UPDATE_METHOD:
-            case REMOVE_METHOD:
-                Organization organization = organizationManager.getById((String)arguments[0]);
-                try {
-                    userManager.getByName(organization.getName());
-                    throw new ForbiddenException("It is not allow to rename/remove personal organization.");
-                } catch (NotFoundException ignored) {
-                    // requested organization is not personal
-                }
+            case "storePermissions":
+                final PermissionsDto permissions = (PermissionsDto)arguments[0];
+                domainId = permissions.getDomainId();
+                userId = permissions.getUserId();
+                instanceId = organizationManager.getById(permissions.getInstanceId()).getId();
+                break;
+            case "removePermissions":
+                domainId = ((String)arguments[0]);
+                instanceId = ((String)arguments[1]);
+                userId = ((String)arguments[2]);
                 break;
             default:
-                //do nothing
+                return;
+        }
+
+        if (!OrganizationDomain.DOMAIN_ID.equals(domainId)) {
+            //filter only setting permissions on organization level
+            return;
+        }
+
+        User user = userManager.getById(userId);
+        Organization organization = organizationManager.getById(instanceId);
+
+        if (organization.getName().equals(user.getName())) {
+            throw new ForbiddenException("It is not allowed to edit organization owner's permissions");
         }
     }
 }

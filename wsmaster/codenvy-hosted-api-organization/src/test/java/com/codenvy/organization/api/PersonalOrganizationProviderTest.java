@@ -16,6 +16,7 @@ package com.codenvy.organization.api;
 
 import com.codenvy.api.permission.server.AbstractPermissionsDomain;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
+import com.codenvy.organization.api.personal.PersonalOrganizationProvider;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
