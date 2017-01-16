@@ -15,4 +15,4 @@
 
 -- Remove old accounts
 DELETE FROM ACCOUNT
-WHERE id LIKE 'user%' or id LIKE 'User%';
+WHERE type = 'personal';
