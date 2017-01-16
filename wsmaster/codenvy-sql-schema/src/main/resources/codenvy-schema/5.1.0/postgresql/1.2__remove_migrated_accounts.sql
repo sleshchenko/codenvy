@@ -13,7 +13,7 @@
 -- from Codenvy S.A..
 --
 
--- Remove old accounts with disabled triggers to speed up
+-- Remove old accounts with disabled triggers to speed up migration
 ALTER TABLE ACCOUNT DISABLE TRIGGER ALL;
 
 DELETE FROM ACCOUNT

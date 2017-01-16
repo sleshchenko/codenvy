@@ -13,36 +13,38 @@
 -- from Codenvy S.A..
 --
 
--- Prepare existing accounts to migration
+-- Rename existing account to make free old account's names
 UPDATE Account
 SET name=CONCAT('tomigrate', name)
 WHERE id LIKE 'user%' or id LIKE 'User%';
 
--- Create new accounts
-INSERT INTO Account
-SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as newid, SUBSTRING(name, 10, length(name)), 'organizational' as type
+-- Create new organizational accounts
+INSERT INTO Account(id, name, type)
+SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as newid,
+       SUBSTRING(name, 10, length(name)),
+       'organizational' as type
 FROM Account
 WHERE id LIKE 'user%' or id LIKE 'User%';
 
 -- Create personal organizations
 INSERT INTO Organization(id, account_id)
-SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id, CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id
+SELECT CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id,
+       CONCAT('organization', SUBSTRING(id, 4, length(id))) as org_id
 FROM Account
 WHERE id LIKE 'user%' or id LIKE 'User%';
 
 -- TODO Revise member id
-INSERT INTO member
+-- Add users permissions in their personal organizations
+-- Create members
+INSERT INTO member(id, organizationid, userid)
 SELECT SUBSTRING(id, 4, length(id)) as memberId,
        CONCAT('organization', SUBSTRING(id, 4, length(id))) as orgId,
        id
 FROM Account
 WHERE id LIKE 'user%' or id LIKE 'User%';
 
--- Add following actions for members:
--- setPermissions, update, delete, manageSuborganizations, manageResources, createWorkspaces, manageWorkspaces.
-
+-- Add actions to members
 CREATE TEMP TABLE Actions (action VARCHAR(255));
-
 INSERT INTO ACTIONS VALUES ('setPermissions'),
                            ('update'),
                            ('delete'),
@@ -51,8 +53,8 @@ INSERT INTO ACTIONS VALUES ('setPermissions'),
                            ('createWorkspaces'),
                            ('manageWorkspaces');
 
-INSERT INTO Member_actions(member_Id, actions)
-SELECT SUBSTRING(id, 4, length(id)) as memberId, action
+INSERT INTO Member_actions(member_id, actions)
+SELECT SUBSTRING(id, 4, length(id)) as member_id, action
 FROM Account as a, actions as orgActions
 WHERE a.id LIKE 'user%' or a.id LIKE 'User%';
 
@@ -61,7 +63,7 @@ UPDATE Workspace
 SET accountid=CONCAT('organization', SUBSTRING(accountid, 4, LENGTH(accountid)))
 WHERE accountid like 'user%' or accountid like 'User%';
 
--- Migrate free resources limits
+-- Relink free resources limits to new accounts
 INSERT INTO freeresourceslimit
 SELECT CONCAT('organization', SUBSTRING(accountid, 4, length(accountid))) as accountid
 FROM freeresourceslimit

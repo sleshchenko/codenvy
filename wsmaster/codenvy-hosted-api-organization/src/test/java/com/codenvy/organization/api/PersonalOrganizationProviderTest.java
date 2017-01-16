@@ -53,13 +53,16 @@ import static org.eclipse.che.commons.test.db.H2TestHelper.inMemoryDefault;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 
+/**
+ * TODO Rework test
+ */
 public class PersonalOrganizationProviderTest {
     private UserDao             userDao;
     private OrganizationManager organizationManager;
     private JpaCleaner          cleaner;
 
     @BeforeMethod
-    private void setUpManager() {
+    private void setUp() {
         final Injector injector = Guice.createInjector(new InitModule(PostConstruct.class),
                                                        new AbstractModule() {
                                                            @Override
