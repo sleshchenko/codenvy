@@ -127,7 +127,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization removing
      */
-    @Transactional
+    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
     public void remove(String organizationId) throws ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         try {

@@ -42,6 +42,8 @@ import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
 
 /**
+ * TODO Add testing of sending of events
+ *
  * Tests for {@link OrganizationManager}
  *
  * @author Sergii Leschenko

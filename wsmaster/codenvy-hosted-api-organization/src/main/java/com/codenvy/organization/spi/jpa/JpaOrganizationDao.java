@@ -147,8 +147,8 @@ public class JpaOrganizationDao implements OrganizationDao {
         }
     }
 
-    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
-    protected void doCreate(OrganizationImpl organization) throws ConflictException, ServerException {
+    @Transactional
+    protected void doCreate(OrganizationImpl organization) {
         EntityManager manager = managerProvider.get();
         manager.persist(organization);
         manager.flush();
@@ -164,8 +164,8 @@ public class JpaOrganizationDao implements OrganizationDao {
         manager.flush();
     }
 
-    @Transactional(rollbackOn = {RuntimeException.class, ServerException.class})
-    protected void doRemove(String organizationId) throws ServerException {
+    @Transactional
+    protected void doRemove(String organizationId) {
         final EntityManager manager = managerProvider.get();
         final OrganizationImpl organization = manager.find(OrganizationImpl.class, organizationId);
         if (organization != null) {
@@ -174,49 +174,4 @@ public class JpaOrganizationDao implements OrganizationDao {
         }
     }
 
-    @Singleton
-    public static class RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscriber
-            extends CascadeEventSubscriber<BeforeOrganizationRemovedEvent> {
-        private static final int PAGE_SIZE = 100;
-
-        @Inject
-        private EventService eventService;
-
-        @Inject
-        private OrganizationDao organizationDao;
-
-        @PostConstruct
-        public void subscribe() {
-            eventService.subscribe(this, BeforeOrganizationRemovedEvent.class);
-        }
-
-        @PreDestroy
-        public void unsubscribe() {
-            eventService.unsubscribe(this, BeforeOrganizationRemovedEvent.class);
-        }
-
-        @Override
-        public void onCascadeEvent(BeforeOrganizationRemovedEvent event) throws Exception {
-            removeSuborganizations(event.getOrganization().getId(), PAGE_SIZE);
-        }
-
-        /**
-         * Removes suborganizations of given parent organization page by page
-         *
-         * @param organizationId
-         *         parent organization id
-         * @param pageSize
-         *         number of items which should removed by one request
-         */
-        void removeSuborganizations(String organizationId, int pageSize) throws ServerException {
-            Page<OrganizationImpl> suborganizationsPage;
-            do {
-                // skip count always equals to 0 because elements will be shifted after removing previous items
-                suborganizationsPage = organizationDao.getByParent(organizationId, pageSize, 0);
-                for (OrganizationImpl suborganization : suborganizationsPage.getItems()) {
-                    organizationDao.remove(suborganization.getId());
-                }
-            } while (suborganizationsPage.hasNextPage());
-        }
-    }
 }

@@ -1,13 +1,17 @@
-/*******************************************************************************
- * Copyright (c) 2012-2017 Codenvy, S.A.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/*
+ *  [2012] - [2017] Codenvy, S.A.
+ *  All Rights Reserved.
  *
- * Contributors:
- *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ * NOTICE:  All information contained herein is, and remains
+ * the property of Codenvy S.A. and its suppliers,
+ * if any.  The intellectual and technical concepts contained
+ * herein are proprietary to Codenvy S.A.
+ * and its suppliers and may be covered by U.S. and Foreign Patents,
+ * patents in process, and are protected by trade secret or copyright law.
+ * Dissemination of this information or reproduction of this material
+ * is strictly forbidden unless prior written permission is obtained
+ * from Codenvy S.A..
+ */
 package com.codenvy.api.deploy;
 
 import com.google.inject.persist.Transactional;
@@ -29,7 +33,10 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
- * //TODO Add java doc
+ * TODO Move this class to right module
+ *
+ * Manager that ensures that every user has one and only one personal account.
+ * Doesn't contain any logic related to user changing.
  *
  * @author Sergii Leschenko
  */

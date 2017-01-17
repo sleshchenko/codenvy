@@ -16,7 +16,6 @@ package com.codenvy.organization.spi.jpa;
 
 import com.codenvy.organization.api.OrganizationJpaModule;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
-import com.codenvy.organization.spi.jpa.JpaOrganizationDao.RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscriber;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -34,17 +33,12 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.persistence.EntityManager;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
 import static org.eclipse.che.commons.test.db.H2TestHelper.inMemoryDefault;
-import static org.eclipse.persistence.config.PersistenceUnitProperties.JDBC_DRIVER;
-import static org.eclipse.persistence.config.PersistenceUnitProperties.JDBC_PASSWORD;
-import static org.eclipse.persistence.config.PersistenceUnitProperties.JDBC_URL;
-import static org.eclipse.persistence.config.PersistenceUnitProperties.JDBC_USER;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 

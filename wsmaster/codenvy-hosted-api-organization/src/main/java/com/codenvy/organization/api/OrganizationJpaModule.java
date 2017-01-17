@@ -26,6 +26,7 @@ import com.codenvy.organization.spi.impl.MemberImpl;
 import com.codenvy.organization.spi.jpa.JpaMemberDao;
 import com.codenvy.organization.spi.jpa.JpaOrganizationDao;
 import com.codenvy.organization.spi.jpa.JpaOrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.jpa.RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscriber;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
@@ -39,7 +40,7 @@ public class OrganizationJpaModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(OrganizationDao.class).to(JpaOrganizationDao.class);
-        bind(JpaOrganizationDao.RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscriber.class).asEagerSingleton();
+        bind(RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscriber.class).asEagerSingleton();
 
         bind(new TypeLiteral<AbstractPermissionsDomain<MemberImpl>>() {}).to(OrganizationDomain.class);
         bind(MemberDao.class).to(JpaMemberDao.class);

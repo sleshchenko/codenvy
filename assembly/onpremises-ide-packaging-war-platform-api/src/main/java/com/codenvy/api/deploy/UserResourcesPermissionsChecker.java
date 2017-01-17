@@ -17,7 +17,6 @@ package com.codenvy.api.deploy;
 import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 
 import org.eclipse.che.api.core.ForbiddenException;
-import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.eclipse.che.commons.env.EnvironmentContext;
 
 import javax.inject.Singleton;
