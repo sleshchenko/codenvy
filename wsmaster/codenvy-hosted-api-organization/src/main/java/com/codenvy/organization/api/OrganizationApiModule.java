@@ -18,10 +18,6 @@ import com.codenvy.api.permission.server.SystemDomain;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsProvider;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;
 import com.codenvy.organization.api.permissions.OrganizationResourceDistributionServicePermissionsFilter;
-import com.codenvy.organization.api.personal.PersonalOrganizationOwnerPermissionsFilter;
-import com.codenvy.organization.api.personal.PersonalOrganizationPermissionsFilter;
-import com.codenvy.organization.api.personal.DefaultOrganizationResourcesProvider;
-import com.codenvy.organization.api.personal.PersonalOrganizationProvider;
 import com.codenvy.organization.api.resource.OrganizationResourceLockKeyProvider;
 import com.codenvy.organization.api.resource.OrganizationResourcesDistributionService;
 import com.codenvy.organization.api.resource.OrganizationResourcesPermissionsChecker;
@@ -45,18 +41,12 @@ public class OrganizationApiModule extends AbstractModule {
         bind(OrganizationService.class);
         bind(OrganizationPermissionsFilter.class);
 
-        bind(PersonalOrganizationOwnerPermissionsFilter.class);
-        bind(PersonalOrganizationPermissionsFilter.class);
-
         bind(OrganizationPermissionsProvider.class).asEagerSingleton();
 
         Multibinder.newSetBinder(binder(),
                                  String.class,
                                  Names.named(SystemDomain.SYSTEM_DOMAIN_ACTIONS))
                    .addBinding().toInstance(OrganizationPermissionsFilter.MANAGE_ORGANIZATIONS_ACTION);
-
-        Multibinder.newSetBinder(binder(), DefaultResourcesProvider.class)
-                   .addBinding().to(DefaultOrganizationResourcesProvider.class);
 
         Multibinder.newSetBinder(binder(), ResourcesProvider.class)
                    .addBinding().to(SuborganizationResourcesProvider.class);
@@ -72,7 +62,5 @@ public class OrganizationApiModule extends AbstractModule {
 
         bind(OrganizationResourcesDistributionService.class);
         bind(OrganizationResourceDistributionServicePermissionsFilter.class);
-
-        bind(PersonalOrganizationProvider.class).asEagerSingleton();
     }
 }
