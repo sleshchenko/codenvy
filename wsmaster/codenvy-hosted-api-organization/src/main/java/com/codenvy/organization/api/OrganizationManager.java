@@ -14,16 +14,21 @@
  */
 package com.codenvy.organization.api;
 
+import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
+import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
 import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.google.common.collect.Sets;
+import com.google.inject.persist.Transactional;
 
+import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
+import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.commons.lang.NameGenerator;
 
 import javax.inject.Inject;
@@ -41,14 +46,17 @@ import static java.util.Objects.requireNonNull;
  */
 @Singleton
 public class OrganizationManager {
+    private final EventService    eventService;
     private final OrganizationDao organizationDao;
     private final MemberDao       memberDao;
     private final Set<String>     reservedNames;
 
     @Inject
-    public OrganizationManager(OrganizationDao organizationDao,
+    public OrganizationManager(EventService eventService,
+                               OrganizationDao organizationDao,
                                MemberDao memberDao,
                                @Named("che.auth.reserved_user_names") String[] reservedNames) {
+        this.eventService = eventService;
         this.organizationDao = organizationDao;
         this.memberDao = memberDao;
         this.reservedNames = Sets.newHashSet(reservedNames);
@@ -69,6 +77,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization creation
      */
+    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
     public Organization create(Organization newOrganization) throws ConflictException, ServerException {
         requireNonNull(newOrganization, "Required non-null organization");
         checkNameReservation(newOrganization.getName());
@@ -76,6 +85,7 @@ public class OrganizationManager {
                                                                    newOrganization.getName(),
                                                                    newOrganization.getParent());
         organizationDao.create(organization);
+        eventService.publish(new PostOrganizationPersistedEvent(organization)).propagateException();
         return organization;
     }
 
@@ -117,9 +127,16 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization removing
      */
+    @Transactional
     public void remove(String organizationId) throws ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
-        organizationDao.remove(organizationId);
+        try {
+            OrganizationImpl organization = organizationDao.getById(organizationId);
+            eventService.publish(new BeforeOrganizationRemovedEvent(organization)).propagateException();
+            organizationDao.remove(organizationId);
+        } catch (NotFoundException e) {
+            // organization is already removed
+        }
     }
 
     /**

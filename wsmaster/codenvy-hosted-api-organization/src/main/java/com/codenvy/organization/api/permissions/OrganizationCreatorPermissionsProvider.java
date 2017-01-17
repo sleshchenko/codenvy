@@ -18,11 +18,7 @@ import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 
-import org.eclipse.che.api.core.NotFoundException;
-import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.model.user.User;
 import org.eclipse.che.api.core.notification.EventService;
-import org.eclipse.che.api.user.server.UserManager;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
 
@@ -37,18 +33,15 @@ import javax.inject.Singleton;
  * @author Sergii Leschenko
  */
 @Singleton
-public class OrganizationPermissionsProvider extends CascadeEventSubscriber<PostOrganizationPersistedEvent> {
+public class OrganizationCreatorPermissionsProvider extends CascadeEventSubscriber<PostOrganizationPersistedEvent> {
     private final MemberDao    memberDao;
     private final EventService eventService;
-    private final UserManager  userManager;
 
     @Inject
-    public OrganizationPermissionsProvider(EventService eventService,
-                                           MemberDao memberDao,
-                                           UserManager userManager) {
+    public OrganizationCreatorPermissionsProvider(EventService eventService,
+                                                  MemberDao memberDao) {
         this.memberDao = memberDao;
         this.eventService = eventService;
-        this.userManager = userManager;
     }
 
     @PostConstruct
@@ -62,21 +55,9 @@ public class OrganizationPermissionsProvider extends CascadeEventSubscriber<Post
     }
 
     @Override
-    public void onCascadeEvent(PostOrganizationPersistedEvent event) throws ServerException {
-        try {
-            User user = userManager.getByName(event.getOrganization().getName());
-            //personal organization creation
-            grantPermissions(user.getId(), event.getOrganization().getId());
-        } catch (NotFoundException e) {
-            //organization is created by user
-            grantPermissions(EnvironmentContext.getCurrent().getSubject().getUserId(),
-                             event.getOrganization().getId());
-        }
-    }
-
-    private void grantPermissions(String userId, String organizationId) throws ServerException {
-        memberDao.store(new MemberImpl(userId,
-                                       organizationId,
+    public void onCascadeEvent(PostOrganizationPersistedEvent event) throws Exception {
+        memberDao.store(new MemberImpl(EnvironmentContext.getCurrent().getSubject().getUserId(),
+                                       event.getOrganization().getId(),
                                        OrganizationDomain.getActions()));
     }
 }

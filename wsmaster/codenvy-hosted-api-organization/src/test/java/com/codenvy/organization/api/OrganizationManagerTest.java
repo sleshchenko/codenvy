@@ -21,6 +21,7 @@ import com.codenvy.organization.spi.impl.OrganizationImpl;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.Page;
+import org.eclipse.che.api.core.notification.EventService;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -48,18 +49,23 @@ import static org.testng.Assert.assertNotNull;
 @Listeners(MockitoTestNGListener.class)
 public class OrganizationManagerTest {
     @Captor
-    ArgumentCaptor<OrganizationImpl> organizationCaptor;
+    private ArgumentCaptor<OrganizationImpl> organizationCaptor;
 
     @Mock
-    OrganizationDao organizationDao;
-    @Mock
-    MemberDao       memberDao;
+    private OrganizationDao organizationDao;
 
-    OrganizationManager manager;
+    @Mock
+    private MemberDao       memberDao;
+
+    @Mock
+    private EventService eventService;
+
+    private OrganizationManager manager;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        manager = new OrganizationManager(organizationDao,
+        manager = new OrganizationManager(eventService,
+                                          organizationDao,
                                           memberDao,
                                           new String[] {"reserved"});
     }

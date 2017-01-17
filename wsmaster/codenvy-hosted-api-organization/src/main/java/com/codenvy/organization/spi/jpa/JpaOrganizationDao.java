@@ -152,7 +152,6 @@ public class JpaOrganizationDao implements OrganizationDao {
         EntityManager manager = managerProvider.get();
         manager.persist(organization);
         manager.flush();
-        eventService.publish(new PostOrganizationPersistedEvent(organization)).propagateException();
     }
 
     @Transactional
@@ -170,7 +169,6 @@ public class JpaOrganizationDao implements OrganizationDao {
         final EntityManager manager = managerProvider.get();
         final OrganizationImpl organization = manager.find(OrganizationImpl.class, organizationId);
         if (organization != null) {
-            eventService.publish(new BeforeOrganizationRemovedEvent(new OrganizationImpl(organization))).propagateException();
             manager.remove(organization);
             manager.flush();
         }

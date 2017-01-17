@@ -15,7 +15,7 @@
 package com.codenvy.organization.api;
 
 import com.codenvy.api.permission.server.SystemDomain;
-import com.codenvy.organization.api.permissions.OrganizationPermissionsProvider;
+import com.codenvy.organization.api.permissions.OrganizationCreatorPermissionsProvider;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;
 import com.codenvy.organization.api.permissions.OrganizationResourceDistributionServicePermissionsFilter;
 import com.codenvy.organization.api.resource.OrganizationResourceLockKeyProvider;
@@ -25,7 +25,6 @@ import com.codenvy.organization.api.resource.OrganizationResourcesReserveTracker
 import com.codenvy.organization.api.resource.SuborganizationResourcesProvider;
 import com.codenvy.resource.api.ResourceLockKeyProvider;
 import com.codenvy.resource.api.ResourcesReserveTracker;
-import com.codenvy.resource.api.free.DefaultResourcesProvider;
 import com.codenvy.resource.api.license.ResourcesProvider;
 import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 import com.google.inject.AbstractModule;
@@ -41,7 +40,7 @@ public class OrganizationApiModule extends AbstractModule {
         bind(OrganizationService.class);
         bind(OrganizationPermissionsFilter.class);
 
-        bind(OrganizationPermissionsProvider.class).asEagerSingleton();
+        bind(OrganizationCreatorPermissionsProvider.class).asEagerSingleton();
 
         Multibinder.newSetBinder(binder(),
                                  String.class,

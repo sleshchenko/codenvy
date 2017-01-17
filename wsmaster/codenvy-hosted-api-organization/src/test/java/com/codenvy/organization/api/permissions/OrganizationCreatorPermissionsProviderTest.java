@@ -32,34 +32,32 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 
 /**
- * TODO Fix test
- *
- * Tests for {@link OrganizationPermissionsProvider}
+ * Tests for {@link OrganizationCreatorPermissionsProvider}
  *
  * @author Sergii Leschenko
  */
 @Listeners(MockitoTestNGListener.class)
-public class OrganizationPermissionsProviderTest {
+public class OrganizationCreatorPermissionsProviderTest {
     @Mock
-    MemberDao    memberDao;
+    private MemberDao    memberDao;
     @Mock
-    EventService eventService;
+    private EventService eventService;
 
     @InjectMocks
-    OrganizationPermissionsProvider permissionsProvider;
+    OrganizationCreatorPermissionsProvider permissionsProvider;
 
     @Test
     public void shouldSelfSubscribe() {
         permissionsProvider.subscribe();
 
-        verify(eventService).subscribe(eq(permissionsProvider));
+        verify(eventService).subscribe(permissionsProvider, PostOrganizationPersistedEvent.class);
     }
 
     @Test
     public void shouldSelfUnsubscribe() {
         permissionsProvider.unsubscribe();
 
-        verify(eventService).unsubscribe(eq(permissionsProvider));
+        verify(eventService).unsubscribe(permissionsProvider, PostOrganizationPersistedEvent.class);
     }
 
     @Test
