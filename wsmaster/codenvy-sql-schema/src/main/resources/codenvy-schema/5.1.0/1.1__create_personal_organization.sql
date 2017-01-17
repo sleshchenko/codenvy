@@ -26,7 +26,7 @@ WHERE type = 'personal';
 
 -- Create new organizational accounts
 INSERT INTO Account(id, name, type)
-SELECT CONCAT('organization', REPLACE_REGEXP(id, '[uU]ser', '')),
+SELECT CONCAT('organization', REGEXP_REPLACE(id, '[uU]ser', '')),
        SUBSTRING(name, 10, length(name)),
        'organizational'
 FROM Account
@@ -34,8 +34,8 @@ WHERE type = 'personal';
 
 -- Create personal organizations
 INSERT INTO Organization(id, account_id)
-SELECT CONCAT('organization', REPLACE_REGEXP(id, '[uU]ser', '')),
-       CONCAT('organization', REPLACE_REGEXP(id, '[uU]ser', ''))
+SELECT CONCAT('organization', REGEXP_REPLACE(id, '[uU]ser', '')),
+       CONCAT('organization', REGEXP_REPLACE(id, '[uU]ser', ''))
 FROM Account
 WHERE type = 'personal';
 
@@ -43,8 +43,8 @@ WHERE type = 'personal';
 -- Add users permissions in their personal organizations
 -- Create members
 INSERT INTO member(id, organizationid, userid)
-SELECT CONCAT('member', REPLACE_REGEXP(id, '[uU]ser', '')),
-       CONCAT('organization', REPLACE_REGEXP(id, '[uU]ser', '')),
+SELECT CONCAT('member', REGEXP_REPLACE(id, '[uU]ser', '')),
+       CONCAT('organization', REGEXP_REPLACE(id, '[uU]ser', '')),
        id
 FROM Account
 WHERE type = 'personal';
@@ -60,27 +60,27 @@ INSERT INTO ACTIONS VALUES ('setPermissions'),
                            ('manageWorkspaces');
 
 INSERT INTO Member_actions(member_id, actions)
-SELECT CONCAT('member', REPLACE_REGEXP(id, '[uU]ser', '')),
+SELECT CONCAT('member', REGEXP_REPLACE(id, '[uU]ser', '')),
        action
 FROM Account as a, Actions as orgActions
 WHERE a.type = 'personal';
 
 -- Relink workspaces to new accounts
 UPDATE Workspace
-SET accountid=(SELECT CONCAT('organization', REPLACE_REGEXP(a.id, '[uU]ser', ''))
+SET accountid=(SELECT CONCAT('organization', REGEXP_REPLACE(a.id, '[uU]ser', ''))
                FROM Account a
                WHERE workspace.accountid = a.id AND a.type = 'personal');
 
 -- Relink free resources limits to new accounts
 INSERT INTO freeresourceslimit(accountid)
-SELECT CONCAT('organization', REPLACE_REGEXP(accountid, '[uU]ser', ''))
+SELECT CONCAT('organization', REGEXP_REPLACE(accountid, '[uU]ser', ''))
 FROM freeresourceslimit l
 JOIN Account a ON a.id = l.accountid
 WHERE a.type = 'personal';
 
 -- Relink resources to new limits
 UPDATE freeresourceslimit_resource
-SET freeresourceslimit_accountid=(SELECT CONCAT('organization', REPLACE_REGEXP(a.id, '[uU]ser', ''))
+SET freeresourceslimit_accountid=(SELECT CONCAT('organization', REGEXP_REPLACE(a.id, '[uU]ser', ''))
                                   FROM Account a
                                   WHERE freeresourceslimit_resource.freeresourceslimit_accountid = a.id AND a.type = 'personal');
 

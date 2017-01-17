@@ -35,6 +35,8 @@ import javax.inject.Singleton;
  */
 @Singleton
 public class OnpremisesUserManager extends UserManager {
+    public static final String PERSONAL_ACCOUNT = "personal";
+
     private final AccountManager accountManager;
 
     @Inject
@@ -52,7 +54,7 @@ public class OnpremisesUserManager extends UserManager {
     public User create(User newUser, boolean isTemporary) throws ConflictException, ServerException {
         User createdUser = super.create(newUser, isTemporary);
 
-        accountManager.create(new AccountImpl(createdUser.getId(), createdUser.getName(), "personal"));
+        accountManager.create(new AccountImpl(createdUser.getId(), createdUser.getName(), PERSONAL_ACCOUNT));
 
         return createdUser;
     }
@@ -63,7 +65,7 @@ public class OnpremisesUserManager extends UserManager {
         User originalUser = getById(user.getId());
 
         if (!originalUser.getName().equals(user.getName())) {
-            accountManager.update(new AccountImpl(user.getId(), user.getName(), "personal"));
+            accountManager.update(new AccountImpl(user.getId(), user.getName(), PERSONAL_ACCOUNT));
         }
 
         super.update(user);

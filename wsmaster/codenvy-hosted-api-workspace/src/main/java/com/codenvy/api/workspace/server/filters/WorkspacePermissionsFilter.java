@@ -187,7 +187,6 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
     void checkNamespaceAccess(Subject currentSubject, @Nullable String namespace, String... actions) throws ForbiddenException,
                                                                                                             NotFoundException,
                                                                                                             ServerException {
-        //TODO Check tests
         if (namespace == null) {
             //namespace will be defined as username by default
             return;
@@ -195,7 +194,12 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
 
         final Account account = accountManager.getByName(namespace);
 
-        if (ORGANIZATIONAL_ACCOUNT.equals(account.getType())) {
+        //TODO Rework class to have different checkings for onpremises and saas packagings
+        if ("personal".equals(account.getType())) {
+            if (!account.getName().equals(currentSubject.getUserName())) {
+                throw new ForbiddenException("User is not authorized to use given namespace");
+            }
+        } else if (ORGANIZATIONAL_ACCOUNT.equals(account.getType())) {
             boolean authorized = false;
             for (String action : actions) {
                 if (authorized = currentSubject.hasPermission(OrganizationDomain.DOMAIN_ID, account.getId(), action)) {

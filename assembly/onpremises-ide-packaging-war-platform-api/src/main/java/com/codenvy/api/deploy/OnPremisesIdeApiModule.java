@@ -49,6 +49,8 @@ import com.codenvy.plugin.github.factory.resolver.GithubFactoryParametersResolve
 import com.codenvy.plugin.gitlab.factory.resolver.GitlabFactoryParametersResolver;
 import com.codenvy.report.ReportModule;
 import com.codenvy.resource.api.ResourceModule;
+import com.codenvy.resource.api.free.DefaultResourcesProvider;
+import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 import com.codenvy.service.bitbucket.BitbucketConfigurationService;
 import com.codenvy.service.systemram.DockerBasedSystemRamInfoProvider;
 import com.codenvy.service.systemram.SystemRamInfoProvider;
@@ -147,6 +149,12 @@ public class OnPremisesIdeApiModule extends AbstractModule {
 
     @Override
     protected void configure() {
+        Multibinder.newSetBinder(binder(), DefaultResourcesProvider.class)
+                   .addBinding().to(DefaultUserResourcesProvider.class);
+
+        Multibinder.newSetBinder(binder(), ResourcesPermissionsChecker.class)
+                   .addBinding().to(UserResourcesPermissionsChecker.class);
+
         bind(ApiInfoService.class);
         bind(ProjectTemplateRegistry.class);
         bind(ProjectTemplateDescriptionLoader.class).asEagerSingleton();
