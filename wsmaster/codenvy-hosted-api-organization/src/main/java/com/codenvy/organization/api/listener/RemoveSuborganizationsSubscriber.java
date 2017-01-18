@@ -34,8 +34,7 @@ import javax.inject.Singleton;
  * @author Sergii Leschenko
  */
 @Singleton
-public class RemoveSuborganizationsSubscriber
-        extends CascadeEventSubscriber<BeforeOrganizationRemovedEvent> {
+public class RemoveSuborganizationsSubscriber extends CascadeEventSubscriber<BeforeOrganizationRemovedEvent> {
     private static final int PAGE_SIZE = 100;
 
     @Inject
