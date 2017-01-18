@@ -15,9 +15,13 @@
 package com.codenvy.organization.api;
 
 import com.codenvy.api.permission.server.SystemDomain;
+import com.codenvy.organization.api.listener.RemoveMembersBeforeOrganizationRemovedEventSubscriber;
+import com.codenvy.organization.api.listener.RemoveOrganizationDistributedResourcesSubscriber;
+import com.codenvy.organization.api.listener.RemoveSuborganizationsSubscriber;
 import com.codenvy.organization.api.permissions.OrganizationCreatorPermissionsProvider;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;
 import com.codenvy.organization.api.permissions.OrganizationResourceDistributionServicePermissionsFilter;
+import com.codenvy.organization.api.listener.RemoveOrganizationOnLastUserRemovedEventSubscriber;
 import com.codenvy.organization.api.resource.OrganizationResourceLockKeyProvider;
 import com.codenvy.organization.api.resource.OrganizationResourcesDistributionService;
 import com.codenvy.organization.api.resource.OrganizationResourcesPermissionsChecker;
@@ -61,5 +65,10 @@ public class OrganizationApiModule extends AbstractModule {
 
         bind(OrganizationResourcesDistributionService.class);
         bind(OrganizationResourceDistributionServicePermissionsFilter.class);
+
+        bind(RemoveSuborganizationsSubscriber.class).asEagerSingleton();
+        bind(RemoveMembersBeforeOrganizationRemovedEventSubscriber.class).asEagerSingleton();
+        bind(RemoveOrganizationOnLastUserRemovedEventSubscriber.class).asEagerSingleton();
+        bind(RemoveOrganizationDistributedResourcesSubscriber.class).asEagerSingleton();
     }
 }

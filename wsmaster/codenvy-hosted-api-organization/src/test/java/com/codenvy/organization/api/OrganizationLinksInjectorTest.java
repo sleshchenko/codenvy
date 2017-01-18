@@ -42,9 +42,9 @@ public class OrganizationLinksInjectorTest {
     private static final String URI_BASE = "http://localhost:8080";
 
     @Mock
-    ServiceContext context;
+    private ServiceContext context;
 
-    OrganizationLinksInjector organizationLinksInjector = new OrganizationLinksInjector();
+    private OrganizationLinksInjector organizationLinksInjector = new OrganizationLinksInjector();
 
     @BeforeMethod
     public void setUp() {

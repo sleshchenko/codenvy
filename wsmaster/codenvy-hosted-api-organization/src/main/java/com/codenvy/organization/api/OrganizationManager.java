@@ -15,7 +15,7 @@
 package com.codenvy.organization.api;
 
 import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
-import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
+import com.codenvy.organization.api.event.OrganizationPersistedEvent;
 import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
@@ -85,7 +85,7 @@ public class OrganizationManager {
                                                                    newOrganization.getName(),
                                                                    newOrganization.getParent());
         organizationDao.create(organization);
-        eventService.publish(new PostOrganizationPersistedEvent(organization)).propagateException();
+        eventService.publish(new OrganizationPersistedEvent(organization)).propagateException();
         return organization;
     }
 

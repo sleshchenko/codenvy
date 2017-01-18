@@ -100,6 +100,7 @@ import org.eclipse.che.api.ssh.server.jpa.SshJpaModule;
 import org.eclipse.che.api.user.server.PreferencesService;
 import org.eclipse.che.api.user.server.ProfileService;
 import org.eclipse.che.api.user.server.TokenValidator;
+import org.eclipse.che.api.user.server.UserManager;
 import org.eclipse.che.api.user.server.UserService;
 import org.eclipse.che.api.user.server.jpa.UserJpaModule;
 import org.eclipse.che.api.workspace.server.WorkspaceConfigMessageBodyAdapter;
@@ -154,6 +155,8 @@ public class OnPremisesIdeApiModule extends AbstractModule {
 
         Multibinder.newSetBinder(binder(), ResourcesPermissionsChecker.class)
                    .addBinding().to(UserResourcesPermissionsChecker.class);
+
+        bind(UserManager.class).to(OnpremisesUserManager.class);
 
         bind(ApiInfoService.class);
         bind(ProjectTemplateRegistry.class);

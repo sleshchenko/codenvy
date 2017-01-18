@@ -14,7 +14,7 @@
  */
 package com.codenvy.organization.api.permissions;
 
-import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
+import com.codenvy.organization.api.event.OrganizationPersistedEvent;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 
@@ -33,7 +33,7 @@ import javax.inject.Singleton;
  * @author Sergii Leschenko
  */
 @Singleton
-public class OrganizationCreatorPermissionsProvider extends CascadeEventSubscriber<PostOrganizationPersistedEvent> {
+public class OrganizationCreatorPermissionsProvider extends CascadeEventSubscriber<OrganizationPersistedEvent> {
     private final MemberDao    memberDao;
     private final EventService eventService;
 
@@ -46,16 +46,16 @@ public class OrganizationCreatorPermissionsProvider extends CascadeEventSubscrib
 
     @PostConstruct
     void subscribe() {
-        eventService.subscribe(this, PostOrganizationPersistedEvent.class);
+        eventService.subscribe(this, OrganizationPersistedEvent.class);
     }
 
     @PreDestroy
     void unsubscribe() {
-        eventService.unsubscribe(this, PostOrganizationPersistedEvent.class);
+        eventService.unsubscribe(this, OrganizationPersistedEvent.class);
     }
 
     @Override
-    public void onCascadeEvent(PostOrganizationPersistedEvent event) throws Exception {
+    public void onCascadeEvent(OrganizationPersistedEvent event) throws Exception {
         memberDao.store(new MemberImpl(EnvironmentContext.getCurrent().getSubject().getUserId(),
                                        event.getOrganization().getId(),
                                        OrganizationDomain.getActions()));

@@ -12,11 +12,12 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.organization.spi.jpa;
+package com.codenvy.organization.api.listener;
 
 import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
-import com.codenvy.organization.spi.OrganizationDao;
-import com.codenvy.organization.spi.impl.OrganizationImpl;
+import com.codenvy.organization.spi.MemberDao;
+import com.codenvy.organization.spi.impl.MemberImpl;
+import com.google.common.annotations.VisibleForTesting;
 
 import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
@@ -29,20 +30,19 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * //TODO Mb move this class to another package
+ * TODO Add doc
  *
  * @author Sergii Leschenko
  */
 @Singleton
-public class RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscriber
+public class RemoveMembersBeforeOrganizationRemovedEventSubscriber
         extends CascadeEventSubscriber<BeforeOrganizationRemovedEvent> {
     private static final int PAGE_SIZE = 100;
 
     @Inject
     private EventService eventService;
-
     @Inject
-    private OrganizationDao organizationDao;
+    private MemberDao    memberDao;
 
     @PostConstruct
     public void subscribe() {
@@ -56,25 +56,18 @@ public class RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscribe
 
     @Override
     public void onCascadeEvent(BeforeOrganizationRemovedEvent event) throws Exception {
-        removeSuborganizations(event.getOrganization().getId(), PAGE_SIZE);
+        removeMembers(event.getOrganization().getId(), PAGE_SIZE);
     }
 
-    /**
-     * Removes suborganizations of given parent organization page by page
-     *
-     * @param organizationId
-     *         parent organization id
-     * @param pageSize
-     *         number of items which should removed by one request
-     */
-    void removeSuborganizations(String organizationId, int pageSize) throws ServerException {
-        Page<OrganizationImpl> suborganizationsPage;
+    @VisibleForTesting
+    void removeMembers(String organizationId, int pageSize) throws ServerException {
+        Page<MemberImpl> membersPage;
         do {
             // skip count always equals to 0 because elements will be shifted after removing previous items
-            suborganizationsPage = organizationDao.getByParent(organizationId, pageSize, 0);
-            for (OrganizationImpl suborganization : suborganizationsPage.getItems()) {
-                organizationDao.remove(suborganization.getId());
+            membersPage = memberDao.getMembers(organizationId, pageSize, 0);
+            for (MemberImpl member : membersPage.getItems()) {
+                memberDao.remove(member.getUserId(), member.getOrganizationId());
             }
-        } while (suborganizationsPage.hasNextPage());
+        } while (membersPage.hasNextPage());
     }
 }

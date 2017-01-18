@@ -29,14 +29,14 @@ import com.codenvy.api.workspace.server.stack.StackPermissionsImpl;
 import com.codenvy.organization.api.OrganizationJpaModule;
 import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
-import com.codenvy.organization.api.permissions.RemoveOrganizationOnLastUserRemovedEventSubscriber;
+import com.codenvy.organization.api.listener.RemoveOrganizationOnLastUserRemovedEventSubscriber;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
-import com.codenvy.organization.spi.jpa.JpaOrganizationDistributedResourcesDao.RemoveOrganizationDistributedResourcesSubscriber;
+import com.codenvy.organization.api.listener.RemoveOrganizationDistributedResourcesSubscriber;
 import com.codenvy.resource.spi.FreeResourcesLimitDao;
 import com.codenvy.resource.spi.impl.FreeResourcesLimitImpl;
 import com.codenvy.resource.spi.impl.ResourceImpl;
@@ -133,6 +133,8 @@ import static org.testng.Assert.fail;
 
 /**
  * Tests top-level entities cascade removals.
+ *
+ * TODO Rework this test accordance to organization events publishing by organizationManager
  *
  * @author Yevhenii Voevodin
  */
