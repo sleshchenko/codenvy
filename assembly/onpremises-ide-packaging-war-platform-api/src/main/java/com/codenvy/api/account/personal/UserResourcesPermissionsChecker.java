@@ -12,7 +12,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.api.deploy;
+package com.codenvy.api.account.personal;
 
 import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 

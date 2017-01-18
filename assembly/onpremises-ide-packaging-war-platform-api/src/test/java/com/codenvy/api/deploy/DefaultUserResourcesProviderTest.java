@@ -14,6 +14,8 @@
  */
 package com.codenvy.api.deploy;
 
+import com.codenvy.api.account.personal.DefaultUserResourcesProvider;
+import com.codenvy.api.account.personal.OnpremisesUserManager;
 import com.codenvy.resource.api.RamResourceType;
 import com.codenvy.resource.api.RuntimeResourceType;
 import com.codenvy.resource.api.WorkspaceResourceType;

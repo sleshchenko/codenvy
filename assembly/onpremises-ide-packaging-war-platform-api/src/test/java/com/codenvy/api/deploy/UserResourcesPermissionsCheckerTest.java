@@ -14,6 +14,9 @@
  */
 package com.codenvy.api.deploy;
 
+import com.codenvy.api.account.personal.OnpremisesUserManager;
+import com.codenvy.api.account.personal.UserResourcesPermissionsChecker;
+
 import org.eclipse.che.api.core.ForbiddenException;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.subject.Subject;
