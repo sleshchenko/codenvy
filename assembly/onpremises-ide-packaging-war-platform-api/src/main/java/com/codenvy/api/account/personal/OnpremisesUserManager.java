@@ -33,8 +33,6 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
- * TODO Move this class to right module
- *
  * Manager that ensures that every user has one and only one personal account.
  * Doesn't contain any logic related to user changing.
  *

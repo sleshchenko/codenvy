@@ -22,6 +22,8 @@ import org.eclipse.che.commons.env.EnvironmentContext;
 import javax.inject.Singleton;
 
 /**
+ * Defines permissions checking rules for access to resources of personal accounts.
+ *
  * @author Sergii Leschenko
  */
 @Singleton
