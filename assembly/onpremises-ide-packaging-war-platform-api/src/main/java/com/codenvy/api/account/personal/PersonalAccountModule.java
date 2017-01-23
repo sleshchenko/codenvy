@@ -14,9 +14,11 @@
  */
 package com.codenvy.api.account.personal;
 
+import com.codenvy.api.workspace.server.filters.AccountPermissionsChecker;
 import com.codenvy.resource.api.free.DefaultResourcesProvider;
 import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 
 import org.eclipse.che.api.user.server.UserManager;
@@ -36,5 +38,8 @@ public class PersonalAccountModule extends AbstractModule {
                    .addBinding().to(UserResourcesPermissionsChecker.class);
 
         bind(UserManager.class).to(OnpremisesUserManager.class);
+
+        MapBinder.newMapBinder(binder(), String.class, AccountPermissionsChecker.class)
+                 .addBinding(OnpremisesUserManager.PERSONAL_ACCOUNT).to(PersonalAccountPermissionsChecker.class);
     }
 }

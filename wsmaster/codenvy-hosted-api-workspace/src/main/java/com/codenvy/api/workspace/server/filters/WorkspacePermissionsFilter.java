@@ -15,8 +15,6 @@
 package com.codenvy.api.workspace.server.filters;
 
 import com.codenvy.api.permission.server.SystemDomain;
-import com.codenvy.organization.api.permissions.OrganizationDomain;
-import com.google.api.client.repackaged.com.google.common.annotations.VisibleForTesting;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
@@ -26,7 +24,6 @@ import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
 import org.eclipse.che.api.workspace.server.WorkspaceService;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
-import org.eclipse.che.commons.annotation.Nullable;
 import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.subject.Subject;
 import org.eclipse.che.everrest.CheMethodInvokerFilter;
@@ -35,6 +32,7 @@ import org.everrest.core.resource.GenericResourceMethod;
 
 import javax.inject.Inject;
 import javax.ws.rs.Path;
+import java.util.Map;
 
 import static com.codenvy.api.workspace.server.WorkspaceDomain.CONFIGURE;
 import static com.codenvy.api.workspace.server.WorkspaceDomain.DELETE;
@@ -42,12 +40,9 @@ import static com.codenvy.api.workspace.server.WorkspaceDomain.DOMAIN_ID;
 import static com.codenvy.api.workspace.server.WorkspaceDomain.READ;
 import static com.codenvy.api.workspace.server.WorkspaceDomain.RUN;
 import static com.codenvy.api.workspace.server.WorkspaceDomain.USE;
-import static com.codenvy.organization.api.permissions.OrganizationDomain.CREATE_WORKSPACES;
-import static com.codenvy.organization.api.permissions.OrganizationDomain.MANAGE_WORKSPACES;
-import static com.codenvy.organization.spi.impl.OrganizationImpl.ORGANIZATIONAL_ACCOUNT;
 
 /**
- * Restricts access to methods of {@link WorkspaceService} by users' permissions
+ * Restricts access to methods of {@link WorkspaceService} by users' permissions.
  *
  * <p>Filter contains rules for protecting of all methods of {@link WorkspaceService}.<br>
  * In case when requested method is unknown filter throws {@link ForbiddenException}
@@ -57,13 +52,17 @@ import static com.codenvy.organization.spi.impl.OrganizationImpl.ORGANIZATIONAL_
 @Filter
 @Path("/workspace{path:(/.*)?}")
 public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
-    private final WorkspaceManager workspaceManager;
-    private final AccountManager   accountManager;
+    private final WorkspaceManager                       workspaceManager;
+    private final AccountManager                         accountManager;
+    private final Map<String, AccountPermissionsChecker> namespaceToPermissionsCheckers;
 
     @Inject
-    public WorkspacePermissionsFilter(WorkspaceManager workspaceManager, AccountManager accountManager) {
+    public WorkspacePermissionsFilter(WorkspaceManager workspaceManager,
+                                      AccountManager accountManager,
+                                      Map<String, AccountPermissionsChecker> namespaceToPermissionsCheckers) {
         this.workspaceManager = workspaceManager;
         this.accountManager = accountManager;
+        this.namespaceToPermissionsCheckers = namespaceToPermissionsCheckers;
     }
 
     @Override
@@ -86,17 +85,17 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
                 if (currentSubject.hasPermission(SystemDomain.DOMAIN_ID, null, SystemDomain.MANAGE_SYSTEM_ACTION)) {
                     return;
                 }
-                checkManageNamespaceAccess(currentSubject, ((String)arguments[1]));
+                checkNamespaceAccess((String)arguments[1], AccountPermissionsChecker.GET_WORKSPACES);
                 return;
             }
 
             case "create": {
-                checkNamespaceAccess(currentSubject, ((String)arguments[3]), MANAGE_WORKSPACES, CREATE_WORKSPACES);
+                checkNamespaceAccess((String)arguments[3], AccountPermissionsChecker.CREATE_WORKSPACES);
                 return;
             }
 
             case "startFromConfig": {
-                checkManageNamespaceAccess(currentSubject, ((String)arguments[2]));
+                checkNamespaceAccess((String)arguments[2], AccountPermissionsChecker.CREATE_WORKSPACES);
                 return;
             }
 
@@ -166,7 +165,7 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
 
         final WorkspaceImpl workspace = workspaceManager.getWorkspace(key);
         try {
-            checkManageNamespaceAccess(currentSubject, workspace.getNamespace());
+            checkNamespaceAccess(workspace.getNamespace(), action);
             // user is authorized to perform any operation if workspace belongs to account where he has the corresponding permissions
         } catch (ForbiddenException e) {
             //check permissions on workspace level
@@ -177,40 +176,26 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
         }
     }
 
-    private void checkManageNamespaceAccess(Subject currentSubject, @Nullable String namespace) throws ServerException,
-                                                                                                       NotFoundException,
-                                                                                                       ForbiddenException {
-        checkNamespaceAccess(currentSubject, namespace, MANAGE_WORKSPACES);
+    void checkNamespaceAccess(String namespace, String action, String qwe) {
+
     }
 
-    @VisibleForTesting
-    void checkNamespaceAccess(Subject currentSubject, @Nullable String namespace, String... actions) throws ForbiddenException,
-                                                                                                            NotFoundException,
-                                                                                                            ServerException {
+    void checkNamespaceAccess(String namespace, String action) throws ForbiddenException,
+                                                                      NotFoundException,
+                                                                      ServerException {
         if (namespace == null) {
-            //namespace will be defined as username by default
+            // default namespace will be used
             return;
         }
 
         final Account account = accountManager.getByName(namespace);
 
-        //TODO Rework class to have different checkings for onpremises and saas packagings
-        if ("personal".equals(account.getType())) {
-            if (!account.getName().equals(currentSubject.getUserName())) {
-                throw new ForbiddenException("User is not authorized to use given namespace");
-            }
-        } else if (ORGANIZATIONAL_ACCOUNT.equals(account.getType())) {
-            boolean authorized = false;
-            for (String action : actions) {
-                if (authorized = currentSubject.hasPermission(OrganizationDomain.DOMAIN_ID, account.getId(), action)) {
-                    break;
-                }
-            }
-            if (!authorized) {
-                throw new ForbiddenException("User is not authorized to use given namespace");
-            }
-        } else {
+        AccountPermissionsChecker accountPermissionsChecker = namespaceToPermissionsCheckers.get(account.getType());
+
+        if (accountPermissionsChecker == null) {
             throw new ForbiddenException("User is not authorized to use given namespace");
         }
+
+        accountPermissionsChecker.checkAccess(namespace, action);
     }
 }
