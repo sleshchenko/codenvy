@@ -196,6 +196,6 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
             throw new ForbiddenException("User is not authorized to use specified namespace");
         }
 
-        accountPermissionsChecker.checkPermissions(accountName, action);
+        accountPermissionsChecker.checkPermissions(account.getId(), action);
     }
 }
