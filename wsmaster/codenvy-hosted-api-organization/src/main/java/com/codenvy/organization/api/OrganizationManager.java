@@ -124,6 +124,7 @@ public class OrganizationManager {
         return organization;
     }
 
+    //TODO Rework tests
     /**
      * Removes organization with given id
      *

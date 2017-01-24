@@ -16,6 +16,7 @@ package com.codenvy.organization.api.listener;
 
 import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
 import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.impl.OrganizationImpl;
 
 import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
@@ -26,7 +27,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 /**
- * TODO Add docs
+ * Listens for {@link OrganizationImpl} removal events and removes distributed
+ * resources that belong organization that is going to be removed.
  *
  * @author Sergii Leschenko
  */
