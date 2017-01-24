@@ -38,8 +38,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -73,10 +75,10 @@ public class OrganizationManagerTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        manager = new OrganizationManager(eventService,
-                                          organizationDao,
-                                          memberDao,
-                                          new String[] {"reserved"});
+        manager = spy(new OrganizationManager(eventService,
+                                              organizationDao,
+                                              memberDao,
+                                              new String[] {"reserved"}));
 
         when(eventService.publish(any())).thenAnswer(invocation -> invocation.getArguments()[0]);
     }
@@ -158,14 +160,28 @@ public class OrganizationManagerTest {
 
     @Test
     public void shouldRemoveOrganization() throws Exception {
+        doNothing().when(manager).removeSuborganizations(anyString(), anyInt());
+        doNothing().when(manager).removeMembers(anyString(), anyInt());
         OrganizationImpl toRemove = createOrganization();
         when(organizationDao.getById(anyString())).thenReturn(toRemove);
 
         manager.remove(toRemove.getId());
 
         verify(organizationDao).remove(toRemove.getId());
+        verify(manager).removeMembers(eq(toRemove.getId()), anyInt());
+        verify(manager).removeSuborganizations(eq(toRemove.getId()), anyInt());
         verify(eventService).publish(removeEventCaptor.capture());
         assertEquals(removeEventCaptor.getValue().getOrganization(), toRemove);
+    }
+
+    @Test
+    public void shouldRemoveMembers() throws Exception {
+        //TODO Implement this test
+    }
+
+    @Test
+    public void shouldRemoveSuborganization() throws Exception {
+        //TODO Implement this test
     }
 
     @Test

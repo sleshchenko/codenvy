@@ -14,6 +14,7 @@
  */
 package com.codenvy.api.account.personal;
 
+import com.codenvy.api.workspace.server.filters.AccountAction;
 import com.codenvy.api.workspace.server.filters.AccountPermissionsChecker;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
 
@@ -26,7 +27,7 @@ import javax.inject.Singleton;
 @Singleton
 public class PersonalAccountPermissionsChecker implements AccountPermissionsChecker {
     @Override
-    public void checkAccess(String id, String action) throws ForbiddenException {
+    public void checkPermissions(String id, AccountAction action) throws ForbiddenException {
         if (!EnvironmentContext.getCurrent().getSubject().getUserId().equals(id)) {
             throw new ForbiddenException("User is not authorized to use specified namespace.");
         }

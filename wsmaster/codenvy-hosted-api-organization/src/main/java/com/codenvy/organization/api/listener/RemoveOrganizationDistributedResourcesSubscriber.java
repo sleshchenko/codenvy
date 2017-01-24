@@ -15,7 +15,7 @@
 package com.codenvy.organization.api.listener;
 
 import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
+import com.codenvy.organization.api.resource.OrganizationResourcesDistributor;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 
 import org.eclipse.che.api.core.notification.EventService;
@@ -35,9 +35,9 @@ import javax.inject.Singleton;
 @Singleton
 public class RemoveOrganizationDistributedResourcesSubscriber extends CascadeEventSubscriber<BeforeOrganizationRemovedEvent> {
     @Inject
-    private EventService                        eventService;
+    private EventService                     eventService;
     @Inject
-    private OrganizationDistributedResourcesDao organizationDistributedResourcesDao;
+    private OrganizationResourcesDistributor resourcesDistributor;
 
     @PostConstruct
     public void subscribe() {
@@ -51,6 +51,6 @@ public class RemoveOrganizationDistributedResourcesSubscriber extends CascadeEve
 
     @Override
     public void onCascadeEvent(BeforeOrganizationRemovedEvent event) throws Exception {
-        organizationDistributedResourcesDao.remove(event.getOrganization().getId());
+        resourcesDistributor.reset(event.getOrganization().getId());
     }
 }

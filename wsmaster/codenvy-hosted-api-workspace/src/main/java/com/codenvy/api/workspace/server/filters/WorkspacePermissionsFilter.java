@@ -54,15 +54,15 @@ import static com.codenvy.api.workspace.server.WorkspaceDomain.USE;
 public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
     private final WorkspaceManager                       workspaceManager;
     private final AccountManager                         accountManager;
-    private final Map<String, AccountPermissionsChecker> namespaceToPermissionsCheckers;
+    private final Map<String, AccountPermissionsChecker> accountTypeToPermissionsChecker;
 
     @Inject
     public WorkspacePermissionsFilter(WorkspaceManager workspaceManager,
                                       AccountManager accountManager,
-                                      Map<String, AccountPermissionsChecker> namespaceToPermissionsCheckers) {
+                                      Map<String, AccountPermissionsChecker> accountTypeToPermissionsChecker) {
         this.workspaceManager = workspaceManager;
         this.accountManager = accountManager;
-        this.namespaceToPermissionsCheckers = namespaceToPermissionsCheckers;
+        this.accountTypeToPermissionsChecker = accountTypeToPermissionsChecker;
     }
 
     @Override
@@ -85,17 +85,17 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
                 if (currentSubject.hasPermission(SystemDomain.DOMAIN_ID, null, SystemDomain.MANAGE_SYSTEM_ACTION)) {
                     return;
                 }
-                checkNamespaceAccess((String)arguments[1], AccountPermissionsChecker.GET_WORKSPACES);
+                checkAccountPermissions((String)arguments[1], AccountAction.MANAGE_WORKSPACES);
                 return;
             }
 
             case "create": {
-                checkNamespaceAccess((String)arguments[3], AccountPermissionsChecker.CREATE_WORKSPACES);
+                checkAccountPermissions((String)arguments[3], AccountAction.CREATE_WORKSPACE);
                 return;
             }
 
             case "startFromConfig": {
-                checkNamespaceAccess((String)arguments[2], AccountPermissionsChecker.CREATE_WORKSPACES);
+                checkAccountPermissions((String)arguments[2], AccountAction.CREATE_WORKSPACE);
                 return;
             }
 
@@ -165,7 +165,7 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
 
         final WorkspaceImpl workspace = workspaceManager.getWorkspace(key);
         try {
-            checkNamespaceAccess(workspace.getNamespace(), action);
+            checkAccountPermissions(workspace.getNamespace(), AccountAction.MANAGE_WORKSPACES);
             // user is authorized to perform any operation if workspace belongs to account where he has the corresponding permissions
         } catch (ForbiddenException e) {
             //check permissions on workspace level
@@ -176,26 +176,26 @@ public class WorkspacePermissionsFilter extends CheMethodInvokerFilter {
         }
     }
 
-    void checkNamespaceAccess(String namespace, String action, String qwe) {
+    void checkAccountPermissions(String namespace, String action, String qwe) {
 
     }
 
-    void checkNamespaceAccess(String namespace, String action) throws ForbiddenException,
-                                                                      NotFoundException,
-                                                                      ServerException {
-        if (namespace == null) {
+    void checkAccountPermissions(String accountName, AccountAction action) throws ForbiddenException,
+                                                                                  NotFoundException,
+                                                                                  ServerException {
+        if (accountName == null) {
             // default namespace will be used
             return;
         }
 
-        final Account account = accountManager.getByName(namespace);
+        final Account account = accountManager.getByName(accountName);
 
-        AccountPermissionsChecker accountPermissionsChecker = namespaceToPermissionsCheckers.get(account.getType());
+        AccountPermissionsChecker accountPermissionsChecker = accountTypeToPermissionsChecker.get(account.getType());
 
         if (accountPermissionsChecker == null) {
-            throw new ForbiddenException("User is not authorized to use given namespace");
+            throw new ForbiddenException("User is not authorized to use specified namespace");
         }
 
-        accountPermissionsChecker.checkAccess(namespace, action);
+        accountPermissionsChecker.checkPermissions(accountName, action);
     }
 }

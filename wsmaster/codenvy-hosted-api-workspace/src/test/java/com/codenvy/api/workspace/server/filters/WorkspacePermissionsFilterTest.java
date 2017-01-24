@@ -63,7 +63,6 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.anyVararg;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -113,7 +112,7 @@ public class WorkspacePermissionsFilterTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        doThrow(new ForbiddenException("")).when(permissionsFilter).checkNamespaceAccess(any(), any(), anyVararg());
+        doThrow(new ForbiddenException("")).when(permissionsFilter).checkAccountPermissions(any(), any(), anyVararg());
 
         when(subject.getUserName()).thenReturn(USERNAME);
         when(workspaceManager.getWorkspace(any())).thenReturn(workspace);
@@ -125,7 +124,7 @@ public class WorkspacePermissionsFilterTest {
 
     @Test
     public void shouldCheckNamespaceAccessOnWorkspaceCreation() throws Exception {
-        doNothing().when(permissionsFilter).checkNamespaceAccess(any(), any(), anyVararg());
+        doNothing().when(permissionsFilter).checkAccountPermissions(any(), any(), anyVararg());
 
         final Response response = given().auth()
                                          .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
@@ -135,14 +134,14 @@ public class WorkspacePermissionsFilterTest {
 
         assertEquals(response.getStatusCode(), 204);
         verify(workspaceService).create(any(), any(), any(), eq("userok"));
-        verify(permissionsFilter).checkNamespaceAccess(any(), eq("userok"), anyVararg());
+        verify(permissionsFilter).checkAccountPermissions(any(), eq("userok"), anyVararg());
         verifyZeroInteractions(subject);
     }
 
     @Test
     public void shouldCheckNamespaceAccessOnFetchingWorkspacesByNamespace() throws Exception {
         when(subject.hasPermission(SystemDomain.DOMAIN_ID, null, SystemDomain.MANAGE_SYSTEM_ACTION)).thenReturn(false);
-        doNothing().when(permissionsFilter).checkNamespaceAccess(any(), any(), anyVararg());
+        doNothing().when(permissionsFilter).checkAccountPermissions(any(), any(), anyVararg());
 
         final Response response = given().auth()
                                          .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
@@ -153,14 +152,14 @@ public class WorkspacePermissionsFilterTest {
         assertEquals(response.getStatusCode(), 200);
         verify(subject).hasPermission(eq(SystemDomain.DOMAIN_ID), eq(null), eq(SystemDomain.MANAGE_SYSTEM_ACTION));
         verify(workspaceService).getByNamespace(any(), eq("userok"));
-        verify(permissionsFilter).checkNamespaceAccess(any(), eq("userok"), anyVararg());
+        verify(permissionsFilter).checkAccountPermissions(any(), eq("userok"), anyVararg());
         verifyZeroInteractions(subject);
     }
 
     @Test
     public void shouldNotCheckNamespaceAccessIfUserHasManageSystemPermissionOnFetchingWorkspacesByNamespace() throws Exception {
         when(subject.hasPermission(SystemDomain.DOMAIN_ID, null, SystemDomain.MANAGE_SYSTEM_ACTION)).thenReturn(true);
-        doNothing().when(permissionsFilter).checkNamespaceAccess(any(), any(), anyVararg());
+        doNothing().when(permissionsFilter).checkAccountPermissions(any(), any(), anyVararg());
 
         final Response response = given().auth()
                                          .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
@@ -171,13 +170,13 @@ public class WorkspacePermissionsFilterTest {
         assertEquals(response.getStatusCode(), 200);
         verify(subject).hasPermission(eq(SystemDomain.DOMAIN_ID), eq(null), eq(SystemDomain.MANAGE_SYSTEM_ACTION));
         verify(workspaceService).getByNamespace(any(), eq("userok"));
-        verify(permissionsFilter, never()).checkNamespaceAccess(any(), eq("userok"), anyVararg());
+        verify(permissionsFilter, never()).checkAccountPermissions(any(), eq("userok"), anyVararg());
         verifyZeroInteractions(subject);
     }
 
     @Test
     public void shouldCheckNamespaceAccessOnStaringWorkspaceFromConfig() throws Exception {
-        doNothing().when(permissionsFilter).checkNamespaceAccess(any(), any(), anyVararg());
+        doNothing().when(permissionsFilter).checkAccountPermissions(any(), any(), anyVararg());
 
         final Response response = given().auth()
                                          .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
@@ -187,7 +186,7 @@ public class WorkspacePermissionsFilterTest {
 
         assertEquals(response.getStatusCode(), 204);
         verify(workspaceService).startFromConfig(any(), any(), eq("userok"));
-        verify(permissionsFilter).checkNamespaceAccess(any(), eq("userok"), anyVararg());
+        verify(permissionsFilter).checkAccountPermissions(any(), eq("userok"), anyVararg());
         verifyZeroInteractions(subject);
     }
 
@@ -638,7 +637,7 @@ public class WorkspacePermissionsFilterTest {
                                                                                                String method,
                                                                                                String action) throws Exception {
         when(subject.hasPermission(anyString(), anyString(), anyString())).thenReturn(false);
-        doThrow(new ForbiddenException("")).when(permissionsFilter).checkNamespaceAccess(any(), any(), anyVararg());
+        doThrow(new ForbiddenException("")).when(permissionsFilter).checkAccountPermissions(any(), any(), anyVararg());
 
         Response response = request(given().auth()
                                            .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
@@ -658,7 +657,7 @@ public class WorkspacePermissionsFilterTest {
     public void shouldNotCheckWorkspacePermissionsWhenWorkspaceBelongToHisPersonalAccount(String path,
                                                                                           String method,
                                                                                           String action) throws Exception {
-        doNothing().when(permissionsFilter).checkNamespaceAccess(any(), any(), anyVararg());
+        doNothing().when(permissionsFilter).checkAccountPermissions(any(), any(), anyVararg());
         when(subject.hasPermission(eq(SystemDomain.DOMAIN_ID), eq(null), eq(SystemDomain.MANAGE_SYSTEM_ACTION))).thenReturn(false);
         when(workspace.getNamespace()).thenReturn(USERNAME);
 
@@ -675,16 +674,16 @@ public class WorkspacePermissionsFilterTest {
 
 //    @Test
 //    public void shouldNotThrowExceptionWhenNamespaceIsNullOnNamespaceAccessChecking() throws Exception {
-//        doCallRealMethod().when(permissionsFilter).checkNamespaceAccess(any(), any());
+//        doCallRealMethod().when(permissionsFilter).checkAccountPermissions(any(), any());
 //
-//        permissionsFilter.checkNamespaceAccess(subject, null);
+//        permissionsFilter.checkAccountPermissions(subject, null);
 //    }
 //
 //    @Test(expectedExceptions = ForbiddenException.class)
 //    public void shouldThrowForbiddenExceptionWhenNamespaceIsNotNullAndDoesNotEqualToUserNameOnNamespaceAccessChecking() throws Exception {
-//        doCallRealMethod().when(permissionsFilter).checkNamespaceAccess(any(), any());
+//        doCallRealMethod().when(permissionsFilter).checkAccountPermissions(any(), any());
 //
-//        permissionsFilter.checkNamespaceAccess(subject, "namespace");
+//        permissionsFilter.checkAccountPermissions(subject, "namespace");
 //    }
 //
     @DataProvider(name = "coveredPaths")

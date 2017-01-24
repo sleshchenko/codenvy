@@ -141,8 +141,8 @@ public class OrganizationManager {
         try {
             OrganizationImpl organization = organizationDao.getById(organizationId);
             eventService.publish(new BeforeOrganizationRemovedEvent(organization)).propagateException();
-            removeSuborganizations(organizationId, PAGE_SIZE);
             removeMembers(organizationId, PAGE_SIZE);
+            removeSuborganizations(organizationId, PAGE_SIZE);
             organizationDao.remove(organizationId);
         } catch (NotFoundException e) {
             // organization is already removed

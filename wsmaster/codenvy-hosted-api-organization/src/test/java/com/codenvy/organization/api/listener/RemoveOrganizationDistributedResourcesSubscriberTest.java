@@ -14,122 +14,44 @@
  */
 package com.codenvy.organization.api.listener;
 
-import com.codenvy.organization.api.OrganizationJpaModule;
-import com.codenvy.organization.api.OrganizationManager;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
-import com.codenvy.organization.spi.impl.OrganizationImpl;
-import com.codenvy.organization.spi.jpa.JpaOrganizationDistributedResourcesDao;
-import com.codenvy.resource.spi.impl.ResourceImpl;
-import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
-import com.google.inject.persist.jpa.JpaPersistModule;
+import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
+import com.codenvy.organization.api.resource.OrganizationResourcesDistributor;
 
-import org.eclipse.che.api.core.NotFoundException;
-import org.eclipse.che.core.db.DBInitializer;
-import org.eclipse.che.core.db.schema.SchemaInitializer;
-import org.eclipse.che.core.db.schema.impl.flyway.FlywaySchemaInitializer;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
+import org.eclipse.che.api.core.notification.EventService;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.testng.MockitoTestNGListener;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
-import javax.persistence.EntityManager;
-import java.util.concurrent.Callable;
-
-import static java.util.Collections.singletonList;
-import static org.eclipse.che.commons.test.db.H2TestHelper.inMemoryDefault;
-import static org.testng.Assert.assertNull;
+import static org.mockito.Mockito.verify;
 
 /**
- * TODO Rework with unit testing by mocks
- *
  * Tests for {@link RemoveOrganizationDistributedResourcesSubscriber}
  *
  * @author Sergii Leschenko
  */
+@Listeners(MockitoTestNGListener.class)
 public class RemoveOrganizationDistributedResourcesSubscriberTest {
-    private EntityManager manager;
+    @Mock
+    private EventService                     eventService;
+    @Mock
+    private OrganizationResourcesDistributor resourcesDistributor;
 
-    private OrganizationManager                    organizationManager;
-    private JpaOrganizationDistributedResourcesDao distributedResourcesDao;
-
+    @InjectMocks
     private RemoveOrganizationDistributedResourcesSubscriber suborganizationsRemover;
 
-    private OrganizationImpl                     organization;
-    private OrganizationDistributedResourcesImpl distributedResources;
-
-    @BeforeClass
-    public void setupEntities() throws Exception {
-        organization = new OrganizationImpl("org1", "parentOrg", null);
-        distributedResources = new OrganizationDistributedResourcesImpl(organization.getId(),
-                                                                        singletonList(new ResourceImpl("test",
-                                                                                                       1020,
-                                                                                                       "unit")));
-
-        Injector injector = com.google.inject.Guice.createInjector(new OrganizationJpaModule(), new TestModule());
-
-        manager = injector.getInstance(EntityManager.class);
-        organizationManager = injector.getInstance(OrganizationManager.class);
-        distributedResourcesDao = injector.getInstance(JpaOrganizationDistributedResourcesDao.class);
-        suborganizationsRemover = injector.getInstance(RemoveOrganizationDistributedResourcesSubscriber.class);
-    }
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        manager.getTransaction().begin();
-        manager.persist(organization);
-        manager.persist(distributedResources);
-        manager.getTransaction().commit();
+    @Test
+    public void shouldSubscribe() {
         suborganizationsRemover.subscribe();
+
+        verify(eventService).subscribe(suborganizationsRemover, BeforeOrganizationRemovedEvent.class);
     }
 
-    @AfterMethod
-    public void cleanup() {
+    @Test
+    public void shouldUnsubscribe() {
         suborganizationsRemover.unsubscribe();
 
-        manager.getTransaction().begin();
-
-        final OrganizationImpl managedOrganization = manager.find(OrganizationImpl.class, this.organization.getId());
-        if (managedOrganization != null) {
-            manager.remove(managedOrganization);
-        }
-
-        OrganizationDistributedResourcesImpl managedDistributedResources = manager.find(OrganizationDistributedResourcesImpl.class,
-                                                                                        this.organization.getId());
-        if (managedDistributedResources != null) {
-            manager.remove(managedDistributedResources);
-        }
-
-        manager.getTransaction().commit();
-    }
-
-    @AfterClass
-    public void shutdown() throws Exception {
-        manager.getEntityManagerFactory().close();
-    }
-
-    @Test(enabled = false)
-    public void shouldRemoveDistributedOrganizationResourcesWhenOrganizationIsRemoved() throws Exception {
-        organizationManager.remove(organization.getId());
-
-        assertNull(notFoundToNull(() -> distributedResourcesDao.get(organization.getId())));
-    }
-
-    private static <T> T notFoundToNull(Callable<T> action) throws Exception {
-        try {
-            return action.call();
-        } catch (NotFoundException x) {
-            return null;
-        }
-    }
-
-    private static class TestModule extends AbstractModule {
-        @Override
-        protected void configure() {
-            install(new JpaPersistModule("main"));
-            bind(SchemaInitializer.class).toInstance(new FlywaySchemaInitializer(inMemoryDefault(), "che-schema", "codenvy-schema"));
-            bind(DBInitializer.class).asEagerSingleton();
-        }
+        verify(eventService).unsubscribe(suborganizationsRemover, BeforeOrganizationRemovedEvent.class);
     }
 }

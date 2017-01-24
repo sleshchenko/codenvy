@@ -14,6 +14,7 @@
  */
 package com.codenvy.organization.api.permissions;
 
+import com.codenvy.api.workspace.server.filters.AccountAction;
 import com.codenvy.api.workspace.server.filters.AccountPermissionsChecker;
 
 import org.eclipse.che.api.core.ForbiddenException;
@@ -25,15 +26,15 @@ import javax.inject.Singleton;
 @Singleton
 public class OrganizationalAccountPermissionsChecker implements AccountPermissionsChecker {
     @Override
-    public void checkAccess(String id, String action) throws ForbiddenException {
+    public void checkPermissions(String id, AccountAction action) throws ForbiddenException {
         Subject subject = EnvironmentContext.getCurrent().getSubject();
         switch (action) {
-            case CREATE_WORKSPACES:
+            case CREATE_WORKSPACE:
                 if (!subject.hasPermission(OrganizationDomain.DOMAIN_ID, id, OrganizationDomain.CREATE_WORKSPACES)) {
                     throw new ForbiddenException("User is not authorized to create workspaces in specified namespace.");
                 }
                 break;
-            case GET_WORKSPACES:
+            case MANAGE_WORKSPACES:
             default:
                 if (!subject.hasPermission(OrganizationDomain.DOMAIN_ID, id, OrganizationDomain.MANAGE_WORKSPACES)) {
                     throw new ForbiddenException("User is not authorized to use specified namespace.");
