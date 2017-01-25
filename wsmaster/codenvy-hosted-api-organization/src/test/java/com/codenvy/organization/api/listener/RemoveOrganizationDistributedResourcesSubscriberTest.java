@@ -16,7 +16,11 @@ package com.codenvy.organization.api.listener;
 
 import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
 import com.codenvy.organization.api.resource.OrganizationResourcesDistributor;
+import com.codenvy.organization.spi.impl.OrganizationImpl;
 
+import org.eclipse.che.api.core.ConflictException;
+import org.eclipse.che.api.core.NotFoundException;
+import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.notification.EventService;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -25,6 +29,7 @@ import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link RemoveOrganizationDistributedResourcesSubscriber}
@@ -37,6 +42,8 @@ public class RemoveOrganizationDistributedResourcesSubscriberTest {
     private EventService                     eventService;
     @Mock
     private OrganizationResourcesDistributor resourcesDistributor;
+    @Mock
+    private OrganizationImpl                 organization;
 
     @InjectMocks
     private RemoveOrganizationDistributedResourcesSubscriber suborganizationsRemover;
@@ -56,8 +63,14 @@ public class RemoveOrganizationDistributedResourcesSubscriberTest {
     }
 
     @Test
-    public void shouldResetResourcesDistributionBeforeOrganizationRemoving() {
-        //TODO Implement test
-        assert false;
+    public void shouldResetResourcesDistributionBeforeOrganizationRemoving() throws ConflictException, NotFoundException, ServerException {
+        //given
+        when(organization.getId()).thenReturn("org123");
+
+        //when
+        suborganizationsRemover.onEvent(new BeforeOrganizationRemovedEvent(organization));
+
+        //then
+        verify(resourcesDistributor).reset("org123");
     }
 }

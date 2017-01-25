@@ -15,8 +15,8 @@
 package com.codenvy.resource.api.usage;
 
 import com.codenvy.api.permission.server.SystemDomain;
-import com.codenvy.api.workspace.server.filters.AccountAction;
-import com.codenvy.api.workspace.server.filters.AccountPermissionsChecker;
+import com.codenvy.api.workspace.server.account.AccountAction;
+import com.codenvy.api.workspace.server.account.AccountPermissionsChecker;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;

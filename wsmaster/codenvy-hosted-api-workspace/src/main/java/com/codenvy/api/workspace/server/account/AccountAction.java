@@ -12,23 +12,26 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.api.workspace.server.filters;
-
-import org.eclipse.che.api.core.ForbiddenException;
+package com.codenvy.api.workspace.server.account;
 
 /**
- * TODO Move to right module
- *
- * Defines permissions checking for accounts with some type.
- *
- * <p>Implementation must be binded with map binder:
- * <pre>
- *     MapBinder.newMapBinder(binder(), String.class, AccountPermissionsChecker.class)
- *         .addBinding("testAccountType").to(TestAccountPermissionsChecker.class);
- * </pre>
+ * Actions that can be performed by users in accounts.
  *
  * @author Sergii Leshchenko
  */
-public interface AccountPermissionsChecker {
-    void checkPermissions(String accountId, AccountAction action) throws ForbiddenException;
+public enum AccountAction {
+    /**
+     * When user creates workspace that will belong to account.
+     */
+    CREATE_WORKSPACE,
+
+    /**
+     * When user tries to do any operation with existing workspace.
+     */
+    MANAGE_WORKSPACES,
+
+    /**
+     * When user tries to do any operation with resources.
+     */
+    SEE_RESOURCE
 }

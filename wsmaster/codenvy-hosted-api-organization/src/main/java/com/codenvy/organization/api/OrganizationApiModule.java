@@ -15,7 +15,7 @@
 package com.codenvy.organization.api;
 
 import com.codenvy.api.permission.server.SystemDomain;
-import com.codenvy.api.workspace.server.filters.AccountPermissionsChecker;
+import com.codenvy.api.workspace.server.account.AccountPermissionsChecker;
 import com.codenvy.organization.api.listener.RemoveOrganizationDistributedResourcesSubscriber;
 import com.codenvy.organization.api.listener.RemoveOrganizationOnLastUserRemovedEventSubscriber;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;

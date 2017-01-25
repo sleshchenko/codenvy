@@ -14,8 +14,8 @@
  */
 package com.codenvy.organization.api.permissions;
 
-import com.codenvy.api.workspace.server.filters.AccountAction;
-import com.codenvy.api.workspace.server.filters.AccountPermissionsChecker;
+import com.codenvy.api.workspace.server.account.AccountAction;
+import com.codenvy.api.workspace.server.account.AccountPermissionsChecker;
 
 import org.eclipse.che.api.core.ForbiddenException;
 import org.eclipse.che.commons.env.EnvironmentContext;
