@@ -17,6 +17,8 @@ package com.codenvy.api.workspace.server.filters;
 import org.eclipse.che.api.core.ForbiddenException;
 
 /**
+ * TODO Move to right module
+ *
  * Defines permissions checking for accounts with some type.
  *
  * <p>Implementation must be binded with map binder:

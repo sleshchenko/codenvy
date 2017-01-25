@@ -28,5 +28,10 @@ public enum AccountAction {
     /**
      * When user tries to do any operation with existing workspace.
      */
-    MANAGE_WORKSPACES
+    MANAGE_WORKSPACES,
+
+    /**
+     * When user tries to do any operation with resources.
+     */
+    SEE_RESOURCE
 }

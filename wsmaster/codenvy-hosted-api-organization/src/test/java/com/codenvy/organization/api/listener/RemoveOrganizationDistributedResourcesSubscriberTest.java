@@ -54,4 +54,10 @@ public class RemoveOrganizationDistributedResourcesSubscriberTest {
 
         verify(eventService).unsubscribe(suborganizationsRemover, BeforeOrganizationRemovedEvent.class);
     }
+
+    @Test
+    public void shouldResetResourcesDistributionBeforeOrganizationRemoving() {
+        //TODO Implement test
+        assert false;
+    }
 }

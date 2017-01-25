@@ -23,23 +23,39 @@ import org.eclipse.che.commons.subject.Subject;
 
 import javax.inject.Singleton;
 
+import static com.codenvy.organization.api.permissions.OrganizationDomain.CREATE_WORKSPACES;
+import static com.codenvy.organization.api.permissions.OrganizationDomain.DOMAIN_ID;
+import static com.codenvy.organization.api.permissions.OrganizationDomain.MANAGE_RESOURCES;
+import static com.codenvy.organization.api.permissions.OrganizationDomain.MANAGE_WORKSPACES;
+
 @Singleton
 public class OrganizationalAccountPermissionsChecker implements AccountPermissionsChecker {
     @Override
-    public void checkPermissions(String id, AccountAction action) throws ForbiddenException {
+    public void checkPermissions(String accountId, AccountAction action) throws ForbiddenException {
         Subject subject = EnvironmentContext.getCurrent().getSubject();
         switch (action) {
             case CREATE_WORKSPACE:
-                if (!subject.hasPermission(OrganizationDomain.DOMAIN_ID, id, OrganizationDomain.CREATE_WORKSPACES)) {
+                if (!subject.hasPermission(OrganizationDomain.DOMAIN_ID, accountId, OrganizationDomain.CREATE_WORKSPACES)) {
                     throw new ForbiddenException("User is not authorized to create workspaces in specified namespace.");
                 }
                 break;
+            case SEE_RESOURCE:
+                if (subject.hasPermission(DOMAIN_ID, accountId, CREATE_WORKSPACES)
+                    || subject.hasPermission(DOMAIN_ID, accountId, MANAGE_RESOURCES)
+                    || subject.hasPermission(DOMAIN_ID, accountId, MANAGE_WORKSPACES)) {
+
+                    // user is able to see resources usage information
+                    return;
+                }
+
+                throw new ForbiddenException("User is not authorized to see resources information of requested organization.");
             case MANAGE_WORKSPACES:
-            default:
-                if (!subject.hasPermission(OrganizationDomain.DOMAIN_ID, id, OrganizationDomain.MANAGE_WORKSPACES)) {
+                if (!subject.hasPermission(OrganizationDomain.DOMAIN_ID, accountId, OrganizationDomain.MANAGE_WORKSPACES)) {
                     throw new ForbiddenException("User is not authorized to use specified namespace.");
                 }
                 break;
+            default:
+                throw new ForbiddenException("User is not authorized to use specified namespace.");
         }
     }
 }

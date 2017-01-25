@@ -23,14 +23,12 @@ import com.codenvy.organization.api.permissions.OrganizationResourceDistribution
 import com.codenvy.organization.api.permissions.OrganizationalAccountPermissionsChecker;
 import com.codenvy.organization.api.resource.OrganizationResourceLockKeyProvider;
 import com.codenvy.organization.api.resource.OrganizationResourcesDistributionService;
-import com.codenvy.organization.api.resource.OrganizationResourcesPermissionsChecker;
 import com.codenvy.organization.api.resource.OrganizationResourcesReserveTracker;
 import com.codenvy.organization.api.resource.SuborganizationResourcesProvider;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.codenvy.resource.api.ResourceLockKeyProvider;
 import com.codenvy.resource.api.ResourcesReserveTracker;
 import com.codenvy.resource.api.license.ResourcesProvider;
-import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
@@ -58,9 +56,6 @@ public class OrganizationApiModule extends AbstractModule {
 
         Multibinder.newSetBinder(binder(), ResourceLockKeyProvider.class)
                    .addBinding().to(OrganizationResourceLockKeyProvider.class);
-
-        Multibinder.newSetBinder(binder(), ResourcesPermissionsChecker.class)
-                   .addBinding().to(OrganizationResourcesPermissionsChecker.class);
 
         bind(OrganizationResourcesDistributionService.class);
         bind(OrganizationResourceDistributionServicePermissionsFilter.class);

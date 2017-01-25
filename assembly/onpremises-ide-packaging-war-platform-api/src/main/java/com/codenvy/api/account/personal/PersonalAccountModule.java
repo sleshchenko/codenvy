@@ -16,7 +16,6 @@ package com.codenvy.api.account.personal;
 
 import com.codenvy.api.workspace.server.filters.AccountPermissionsChecker;
 import com.codenvy.resource.api.free.DefaultResourcesProvider;
-import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
@@ -33,9 +32,6 @@ public class PersonalAccountModule extends AbstractModule {
     protected void configure() {
         Multibinder.newSetBinder(binder(), DefaultResourcesProvider.class)
                    .addBinding().to(DefaultUserResourcesProvider.class);
-
-        Multibinder.newSetBinder(binder(), ResourcesPermissionsChecker.class)
-                   .addBinding().to(UserResourcesPermissionsChecker.class);
 
         bind(UserManager.class).to(OnpremisesUserManager.class);
 
