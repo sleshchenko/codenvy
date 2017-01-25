@@ -16,12 +16,14 @@ package com.codenvy.api.workspace.server;
 
 import com.codenvy.api.machine.server.filters.RecipePermissionsFilter;
 import com.codenvy.api.machine.server.recipe.RecipeCreatorPermissionsProvider;
+import com.codenvy.api.workspace.server.account.AccountPermissionsChecker;
 import com.codenvy.api.workspace.server.filters.RecipeScriptDownloadPermissionFilter;
 import com.codenvy.api.workspace.server.filters.SetPublicPermissionsFilter;
 import com.codenvy.api.workspace.server.filters.StackPermissionsFilter;
 import com.codenvy.api.workspace.server.filters.WorkspacePermissionsFilter;
 import com.codenvy.api.workspace.server.stack.StackCreatorPermissionsProvider;
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.MapBinder;
 
 /**
  * @author Sergii Leschenko
@@ -38,5 +40,8 @@ public class WorkspaceApiModule extends AbstractModule {
         bind(WorkspaceCreatorPermissionsProvider.class).asEagerSingleton();
         bind(StackCreatorPermissionsProvider.class).asEagerSingleton();
         bind(RecipeCreatorPermissionsProvider.class).asEagerSingleton();
+
+        //initialize empty map binder
+        MapBinder.newMapBinder(binder(), String.class, AccountPermissionsChecker.class);
     }
 }

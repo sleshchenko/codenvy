@@ -12,75 +12,51 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.organization.api.resource;
+package com.codenvy.api.deploy;
 
-import com.codenvy.organization.api.OrganizationManager;
-import com.codenvy.organization.shared.model.Organization;
+import com.codenvy.api.account.personal.DefaultUserResourcesProvider;
+import com.codenvy.api.account.personal.OnpremisesUserManager;
 import com.codenvy.resource.api.RamResourceType;
 import com.codenvy.resource.api.RuntimeResourceType;
 import com.codenvy.resource.api.WorkspaceResourceType;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 
-import org.mockito.Mock;
-import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Tests for {@link DefaultOrganizationResourcesProvider}
+ * Tests for {@link DefaultUserResourcesProvider}
  *
  * @author Sergii Leschenko
  */
-@Listeners(MockitoTestNGListener.class)
-public class DefaultOrganizationResourcesProviderTest {
-    @Mock
-    private OrganizationManager organizationManager;
-    @Mock
-    private Organization        organization;
-
-    private DefaultOrganizationResourcesProvider organizationResourcesProvider;
+public class DefaultUserResourcesProviderTest {
+    private DefaultUserResourcesProvider resourcesProvider;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        organizationResourcesProvider = new DefaultOrganizationResourcesProvider(organizationManager,
-                                                                                 "2gb",
-                                                                                 10,
-                                                                                 5);
-        when(organizationManager.getById(anyString())).thenReturn(organization);
+        resourcesProvider = new DefaultUserResourcesProvider("2gb", 10, 5);
     }
 
     @Test
-    public void shouldNotProvideDefaultResourcesForSuborganization() throws Exception {
-        //given
-        when(organization.getParent()).thenReturn("parentId");
-
+    public void shouldReturnPersonalAccountType() throws Exception {
         //when
-        final List<ResourceImpl> defaultResources = organizationResourcesProvider.getResources("organization123");
+        final String accountType = resourcesProvider.getAccountType();
 
         //then
-        verify(organizationManager).getById("organization123");
-        assertTrue(defaultResources.isEmpty());
+        assertEquals(accountType, OnpremisesUserManager.PERSONAL_ACCOUNT);
     }
 
     @Test
-    public void shouldProvideDefaultResourcesForRootOrganization() throws Exception {
-        //given
-        when(organization.getParent()).thenReturn(null);
-
+    public void shouldProvideDefaultRamResourceForUser() throws Exception {
         //when
-        final List<ResourceImpl> defaultResources = organizationResourcesProvider.getResources("organization123");
+        final List<ResourceImpl> defaultResources = resourcesProvider.getResources("user123");
 
         //then
-        verify(organizationManager).getById("organization123");
         assertEquals(defaultResources.size(), 3);
         assertTrue(defaultResources.contains(new ResourceImpl(RamResourceType.ID,
                                                               2048,
@@ -91,5 +67,6 @@ public class DefaultOrganizationResourcesProviderTest {
         assertTrue(defaultResources.contains(new ResourceImpl(RuntimeResourceType.ID,
                                                               5,
                                                               RuntimeResourceType.UNIT)));
+
     }
 }

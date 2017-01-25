@@ -12,31 +12,23 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.resource.api.usage;
+package com.codenvy.api.account.personal;
+
+import com.codenvy.api.workspace.server.account.AccountAction;
+import com.codenvy.api.workspace.server.account.AccountPermissionsChecker;
 
 import org.eclipse.che.api.core.ForbiddenException;
-import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.eclipse.che.commons.env.EnvironmentContext;
 
 import javax.inject.Singleton;
 
-/**
- * @author Sergii Leschenko
- */
 @Singleton
-public class UserResourcesPermissionsChecker implements ResourcesPermissionsChecker {
+public class PersonalAccountPermissionsChecker implements AccountPermissionsChecker {
     @Override
-    public void checkResourcesVisibility(String accountId) throws ForbiddenException {
-        if (EnvironmentContext.getCurrent().getSubject().getUserId().equals(accountId)) {
-            //user should be able to see resources of his personal account
-            return;
+    public void checkPermissions(String id, AccountAction action) throws ForbiddenException {
+        // ignore action because user should be able to do anything in his personal account
+        if (!EnvironmentContext.getCurrent().getSubject().getUserId().equals(id)) {
+            throw new ForbiddenException("User is not authorized to use specified account");
         }
-
-        throw new ForbiddenException("User is not authorized to see resources information of requested account.");
-    }
-
-    @Override
-    public String getAccountType() {
-        return UserImpl.PERSONAL_ACCOUNT;
     }
 }

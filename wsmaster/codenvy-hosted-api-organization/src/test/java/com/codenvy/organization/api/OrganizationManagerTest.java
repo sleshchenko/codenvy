@@ -14,13 +14,17 @@
  */
 package com.codenvy.organization.api;
 
+import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
+import com.codenvy.organization.api.event.OrganizationPersistedEvent;
 import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 
 import org.eclipse.che.api.core.ConflictException;
+import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
+import org.eclipse.che.api.core.notification.EventService;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
@@ -32,8 +36,12 @@ import org.testng.annotations.Test;
 import static java.util.Collections.singletonList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -48,20 +56,31 @@ import static org.testng.Assert.assertNotNull;
 @Listeners(MockitoTestNGListener.class)
 public class OrganizationManagerTest {
     @Captor
-    ArgumentCaptor<OrganizationImpl> organizationCaptor;
+    private ArgumentCaptor<OrganizationImpl>               organizationCaptor;
+    @Captor
+    private ArgumentCaptor<OrganizationPersistedEvent>     persistEventCaptor;
+    @Captor
+    private ArgumentCaptor<BeforeOrganizationRemovedEvent> removeEventCaptor;
 
     @Mock
-    OrganizationDao organizationDao;
-    @Mock
-    MemberDao       memberDao;
+    private OrganizationDao organizationDao;
 
-    OrganizationManager manager;
+    @Mock
+    private MemberDao memberDao;
+
+    @Mock
+    private EventService eventService;
+
+    private OrganizationManager manager;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        manager = new OrganizationManager(organizationDao,
-                                          memberDao,
-                                          new String[] {"reserved"});
+        manager = spy(new OrganizationManager(eventService,
+                                              organizationDao,
+                                              memberDao,
+                                              new String[] {"reserved"}));
+
+        when(eventService.publish(any())).thenAnswer(invocation -> invocation.getArguments()[0]);
     }
 
     @Test
@@ -74,6 +93,8 @@ public class OrganizationManagerTest {
         final OrganizationImpl createdOrganization = organizationCaptor.getValue();
         assertEquals(createdOrganization.getName(), toCreate.getName());
         assertEquals(createdOrganization.getParent(), toCreate.getParent());
+        verify(eventService).publish(persistEventCaptor.capture());
+        assertEquals(persistEventCaptor.getValue().getOrganization(), createdOrganization);
     }
 
     @Test
@@ -139,9 +160,38 @@ public class OrganizationManagerTest {
 
     @Test
     public void shouldRemoveOrganization() throws Exception {
-        manager.remove("org123");
+        doNothing().when(manager).removeSuborganizations(anyString(), anyInt());
+        doNothing().when(manager).removeMembers(anyString(), anyInt());
+        OrganizationImpl toRemove = createOrganization();
+        when(organizationDao.getById(anyString())).thenReturn(toRemove);
 
-        verify(organizationDao).remove(eq("org123"));
+        manager.remove(toRemove.getId());
+
+        verify(organizationDao).remove(toRemove.getId());
+        verify(manager).removeMembers(eq(toRemove.getId()), anyInt());
+        verify(manager).removeSuborganizations(eq(toRemove.getId()), anyInt());
+        verify(eventService).publish(removeEventCaptor.capture());
+        assertEquals(removeEventCaptor.getValue().getOrganization(), toRemove);
+    }
+
+    @Test
+    public void shouldRemoveMembers() throws Exception {
+        //TODO Implement this test
+    }
+
+    @Test
+    public void shouldRemoveSuborganization() throws Exception {
+        //TODO Implement this test
+    }
+
+    @Test
+    public void shouldNotTryToRemoveOrganizationWhenItIsNotExistRemoveOrganization() throws Exception {
+        when(organizationDao.getById(anyString())).thenThrow(new NotFoundException("not found"));
+
+        manager.remove("id");
+
+        verify(organizationDao, never()).remove(anyString());
+        verify(eventService, never()).publish(any());
     }
 
     @Test(expectedExceptions = NullPointerException.class)

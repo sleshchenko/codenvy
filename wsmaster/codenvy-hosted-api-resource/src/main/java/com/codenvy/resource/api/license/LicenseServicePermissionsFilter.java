@@ -14,7 +14,8 @@
  */
 package com.codenvy.resource.api.license;
 
-import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
+import com.codenvy.api.workspace.server.account.AccountAction;
+import com.codenvy.api.workspace.server.account.AccountPermissionsChecker;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
@@ -27,10 +28,6 @@ import org.everrest.core.resource.GenericResourceMethod;
 import javax.inject.Inject;
 import javax.ws.rs.Path;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Restricts access to methods of {@link AccountLicenseService} by users' permissions.
@@ -45,16 +42,14 @@ import static java.util.stream.Collectors.toMap;
 public class LicenseServicePermissionsFilter extends CheMethodInvokerFilter {
     public static final String GET_LICENSE_METHOD = "getLicense";
 
-    private final AccountManager                           accountManager;
-    private final Map<String, ResourcesPermissionsChecker> permissionsCheckers;
+    private final AccountManager                         accountManager;
+    private final Map<String, AccountPermissionsChecker> permissionsCheckers;
 
     @Inject
     public LicenseServicePermissionsFilter(AccountManager accountManager,
-                                           Set<ResourcesPermissionsChecker> permissionsCheckers) {
+                                           Map<String, AccountPermissionsChecker> permissionsCheckers) {
         this.accountManager = accountManager;
-        this.permissionsCheckers = permissionsCheckers.stream()
-                                                      .collect(toMap(ResourcesPermissionsChecker::getAccountType,
-                                                                     Function.identity()));
+        this.permissionsCheckers = permissionsCheckers;
     }
 
     @Override
@@ -70,9 +65,9 @@ public class LicenseServicePermissionsFilter extends CheMethodInvokerFilter {
         }
 
         final Account account = accountManager.getById(accountId);
-        final ResourcesPermissionsChecker resourcesPermissionsChecker = permissionsCheckers.get(account.getType());
-        if (resourcesPermissionsChecker != null) {
-            resourcesPermissionsChecker.checkResourcesVisibility(accountId);
+        final AccountPermissionsChecker permissionsChecker = permissionsCheckers.get(account.getType());
+        if (permissionsChecker != null) {
+            permissionsChecker.checkPermissions(accountId, AccountAction.SEE_RESOURCE);
         } else {
             throw new ForbiddenException("User is not authorized to perform given operation");
         }

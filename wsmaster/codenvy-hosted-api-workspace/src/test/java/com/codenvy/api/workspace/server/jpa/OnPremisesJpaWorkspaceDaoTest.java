@@ -25,6 +25,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.persist.jpa.JpaPersistModule;
 
+import org.eclipse.che.account.spi.AccountImpl;
 import org.eclipse.che.api.user.server.model.impl.UserImpl;
 import org.eclipse.che.api.workspace.server.jpa.JpaStackDao;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceConfigImpl;
@@ -54,6 +55,7 @@ public class OnPremisesJpaWorkspaceDaoTest {
     private EntityManager             manager;
     private OnPremisesJpaWorkspaceDao dao;
 
+    private AccountImpl     account;
     private WorkerImpl[]    workers;
     private UserImpl[]      users;
     private WorkspaceImpl[] workspaces;
@@ -68,13 +70,14 @@ public class OnPremisesJpaWorkspaceDaoTest {
         users = new UserImpl[] {new UserImpl("user1", "user1@com.com", "usr1"),
                                 new UserImpl("user2", "user2@com.com", "usr2")};
 
+        account = new AccountImpl("account1", "accountName", "test");
+
         workspaces = new WorkspaceImpl[] {
-                new WorkspaceImpl("ws1", users[0].getAccount(), new WorkspaceConfigImpl("wrksp1", "", "cfg1", null, null, null)),
-                new WorkspaceImpl("ws2", users[0].getAccount(), new WorkspaceConfigImpl("wrksp2", "", "cfg2", null, null, null)),
-                new WorkspaceImpl("ws3", users[0].getAccount(), new WorkspaceConfigImpl("wrksp3", "", "cfg3", null, null, null))};
-        Injector injector =
-                Guice.createInjector(new TestModule(), new OnPremisesJpaMachineModule(), new PermissionsModule(),
-                                     new SystemPermissionsJpaModule());
+                new WorkspaceImpl("ws1", account, new WorkspaceConfigImpl("wrksp1", "", "cfg1", null, null, null)),
+                new WorkspaceImpl("ws2", account, new WorkspaceConfigImpl("wrksp2", "", "cfg2", null, null, null)),
+                new WorkspaceImpl("ws3", account, new WorkspaceConfigImpl("wrksp3", "", "cfg3", null, null, null))};
+        Injector injector = Guice.createInjector(new TestModule(), new OnPremisesJpaMachineModule(), new PermissionsModule(),
+                                                 new SystemPermissionsJpaModule());
         manager = injector.getInstance(EntityManager.class);
         dao = injector.getInstance(OnPremisesJpaWorkspaceDao.class);
     }
@@ -82,6 +85,8 @@ public class OnPremisesJpaWorkspaceDaoTest {
     @BeforeMethod
     public void setUp() throws Exception {
         manager.getTransaction().begin();
+        manager.persist(account);
+
         for (UserImpl user : users) {
             manager.persist(user);
         }
@@ -110,6 +115,10 @@ public class OnPremisesJpaWorkspaceDaoTest {
                .forEach(manager::remove);
 
         manager.createQuery("SELECT u FROM Usr u", UserImpl.class)
+               .getResultList()
+               .forEach(manager::remove);
+
+        manager.createQuery("SELECT a FROM Account a", AccountImpl.class)
                .getResultList()
                .forEach(manager::remove);
         manager.getTransaction().commit();

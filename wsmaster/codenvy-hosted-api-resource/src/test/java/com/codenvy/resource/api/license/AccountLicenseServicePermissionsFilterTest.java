@@ -14,7 +14,6 @@
  */
 package com.codenvy.resource.api.license;
 
-import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.che.account.api.AccountManager;
@@ -58,6 +57,7 @@ import static org.testng.Assert.assertTrue;
  */
 @Listeners({EverrestJetty.class, MockitoTestNGListener.class})
 public class AccountLicenseServicePermissionsFilterTest {
+    /*
     @SuppressWarnings("unused")
     private static final ApiExceptionMapper MAPPER = new ApiExceptionMapper();
     @SuppressWarnings("unused")
@@ -156,4 +156,5 @@ public class AccountLicenseServicePermissionsFilterTest {
             EnvironmentContext.getCurrent().setSubject(subject);
         }
     }
+    */
 }
