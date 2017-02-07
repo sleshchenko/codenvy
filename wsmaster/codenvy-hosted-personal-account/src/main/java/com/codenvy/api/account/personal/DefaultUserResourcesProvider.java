@@ -14,6 +14,7 @@
  */
 package com.codenvy.api.account.personal;
 
+import com.codenvy.activity.server.TimeoutResourceType;
 import com.codenvy.resource.api.RamResourceType;
 import com.codenvy.resource.api.RuntimeResourceType;
 import com.codenvy.resource.api.WorkspaceResourceType;
@@ -38,15 +39,18 @@ import static java.util.Arrays.asList;
  */
 @Singleton
 public class DefaultUserResourcesProvider implements DefaultResourcesProvider {
+    private final long timeout;
     private final long ramPerUser;
     private final int  workspacesPerUser;
     private final int  runtimesPerUser;
 
     @Inject
-    public DefaultUserResourcesProvider(@Named("limits.user.workspaces.ram") String ramPerUser,
+    public DefaultUserResourcesProvider(@Named("limits.workspace.idle.timeout") long timeout,//mb inject value as minute here
+                                        @Named("limits.user.workspaces.ram") String ramPerUser,
                                         @Named("limits.user.workspaces.count") int workspacesPerUser,
                                         @Named("limits.user.workspaces.run.count") int runtimesPerUser) {
-        this.ramPerUser = "-1".equals(ramPerUser) ? -1 : Size.parseSizeToMegabytes(ramPerUser);
+        this.timeout = timeout / 60 / 1000;
+        this.ramPerUser = Size.parseSizeToMegabytes(ramPerUser);
         this.workspacesPerUser = workspacesPerUser;
         this.runtimesPerUser = runtimesPerUser;
     }
@@ -58,7 +62,8 @@ public class DefaultUserResourcesProvider implements DefaultResourcesProvider {
 
     @Override
     public List<ResourceImpl> getResources(String accountId) throws ServerException, NotFoundException {
-        return asList(new ResourceImpl(RamResourceType.ID, ramPerUser, RamResourceType.UNIT),
+        return asList(new ResourceImpl(TimeoutResourceType.ID, timeout, TimeoutResourceType.UNIT),
+                      new ResourceImpl(RamResourceType.ID, ramPerUser, RamResourceType.UNIT),
                       new ResourceImpl(WorkspaceResourceType.ID, workspacesPerUser, WorkspaceResourceType.UNIT),
                       new ResourceImpl(RuntimeResourceType.ID, runtimesPerUser, RuntimeResourceType.UNIT));
     }

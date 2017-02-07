@@ -14,15 +14,22 @@
  */
 package com.codenvy.activity.server;
 
+import com.codenvy.resource.api.usage.ResourceUsageManager;
+import com.codenvy.resource.model.Resource;
+import com.codenvy.resource.spi.impl.ResourceImpl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 
+import org.eclipse.che.account.api.AccountManager;
+import org.eclipse.che.account.shared.model.Account;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
+import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.workspace.Workspace;
 import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.core.notification.EventSubscriber;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
+import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
 import org.eclipse.che.api.workspace.shared.dto.event.WorkspaceStatusEvent;
 import org.eclipse.che.commons.schedule.ScheduleRate;
 import org.slf4j.Logger;
@@ -30,9 +37,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.codenvy.activity.shared.Constants.ACTIVITY_CHECKER;
@@ -51,17 +59,20 @@ public class WorkspaceActivityManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkspaceActivityManager.class);
 
-    private final long               expirePeriod;
-    private final Map<String, Long>  activeWorkspaces;
-    private final WorkspaceManager   workspaceManager;
-    private final EventService       eventService;
-    private final EventSubscriber<?> workspaceEventsSubscriber;
+    private final ResourceUsageManager resourceUsageManager;
+    private final AccountManager       accountManager;
+    private final Map<String, Long>    activeWorkspaces;
+    private final WorkspaceManager     workspaceManager;
+    private final EventService         eventService;
+    private final EventSubscriber<?>   workspaceEventsSubscriber;
 
     @Inject
-    public WorkspaceActivityManager(@Named("machine.ws_agent.inactive_stop_timeout_ms") long expirePeriod,
+    public WorkspaceActivityManager(ResourceUsageManager resourceUsageManager,
+                                    AccountManager accountManager,
                                     WorkspaceManager workspaceManager,
                                     EventService eventService) {
-        this.expirePeriod = expirePeriod;
+        this.resourceUsageManager = resourceUsageManager;
+        this.accountManager = accountManager;
         this.workspaceManager = workspaceManager;
         this.eventService = eventService;
         this.activeWorkspaces = new ConcurrentHashMap<>();
@@ -99,16 +110,37 @@ public class WorkspaceActivityManager {
      *         moment in which the activity occurred
      */
     public void update(String wsId, long activityTime) {
-        if (expirePeriod > 0) {
-            activeWorkspaces.put(wsId, activityTime + expirePeriod);
+        try {
+            Resource timeout = getTimeout(wsId);
+            if (timeout.getAmount() > 0) {
+                activeWorkspaces.put(wsId, activityTime + timeout.getAmount() * 60 * 1000);
+            }
+        } catch (NotFoundException | ServerException e) {
+            LOG.error(e.getLocalizedMessage(), e);
+        }
+    }
+
+    private Resource getTimeout(String workspaceId) throws NotFoundException, ServerException {
+        WorkspaceImpl workspace = workspaceManager.getWorkspace(workspaceId);
+        Account account = accountManager.getByName(workspace.getNamespace());
+        List<? extends Resource> availableResources = resourceUsageManager.getAvailableResources(account.getId());
+        Optional<? extends Resource> timeoutOpt = availableResources.stream()
+                                                                    .filter(resource -> resource.getType()
+                                                                                                .equals(TimeoutResourceType.ID))
+                                                                    .findAny();
+
+        if (timeoutOpt.isPresent()) {
+            return timeoutOpt.get();
+        } else {
+            //TODO Revise that it is OK to return -1 here
+            return new ResourceImpl(TimeoutResourceType.ID,
+                                    -1,
+                                    TimeoutResourceType.UNIT);
         }
     }
 
     @ScheduleRate(periodParameterName = "stop.workspace.scheduler.period")
     private void invalidate() {
-        if (expirePeriod <= 0) {
-            return;
-        }
         final long currentTime = System.currentTimeMillis();
         for (Map.Entry<String, Long> workspaceExpireEntry : activeWorkspaces.entrySet()) {
             if (workspaceExpireEntry.getValue() <= currentTime) {
@@ -136,9 +168,7 @@ public class WorkspaceActivityManager {
     @VisibleForTesting
     @PostConstruct
     void subscribe() {
-        if (expirePeriod > 0) {
-            eventService.subscribe(workspaceEventsSubscriber);
-        }
+        eventService.subscribe(workspaceEventsSubscriber);
     }
 
     @PreDestroy

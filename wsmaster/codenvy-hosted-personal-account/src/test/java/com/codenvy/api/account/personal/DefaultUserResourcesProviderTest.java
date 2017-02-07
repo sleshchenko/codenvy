@@ -14,6 +14,7 @@
  */
 package com.codenvy.api.account.personal;
 
+import com.codenvy.activity.server.TimeoutResourceType;
 import com.codenvy.resource.api.RamResourceType;
 import com.codenvy.resource.api.RuntimeResourceType;
 import com.codenvy.resource.api.WorkspaceResourceType;
@@ -37,7 +38,7 @@ public class DefaultUserResourcesProviderTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        resourcesProvider = new DefaultUserResourcesProvider("2gb", 10, 5);
+        resourcesProvider = new DefaultUserResourcesProvider(20*60*1000, "2gb", 10, 5);
     }
 
     @Test
@@ -55,7 +56,7 @@ public class DefaultUserResourcesProviderTest {
         final List<ResourceImpl> defaultResources = resourcesProvider.getResources("user123");
 
         //then
-        assertEquals(defaultResources.size(), 3);
+        assertEquals(defaultResources.size(), 4);
         assertTrue(defaultResources.contains(new ResourceImpl(RamResourceType.ID,
                                                               2048,
                                                               RamResourceType.UNIT)));
@@ -65,6 +66,8 @@ public class DefaultUserResourcesProviderTest {
         assertTrue(defaultResources.contains(new ResourceImpl(RuntimeResourceType.ID,
                                                               5,
                                                               RuntimeResourceType.UNIT)));
-
+        assertTrue(defaultResources.contains(new ResourceImpl(TimeoutResourceType.ID,
+                                                              20,
+                                                              TimeoutResourceType.UNIT)));
     }
 }

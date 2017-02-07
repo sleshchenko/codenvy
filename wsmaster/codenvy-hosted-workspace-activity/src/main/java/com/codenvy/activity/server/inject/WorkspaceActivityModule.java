@@ -15,9 +15,12 @@
 package com.codenvy.activity.server.inject;
 
 import com.codenvy.activity.server.ActivityPermissionsFilter;
+import com.codenvy.activity.server.TimeoutResourceType;
 import com.codenvy.activity.server.WorkspaceActivityManager;
 import com.codenvy.activity.server.WorkspaceActivityService;
+import com.codenvy.resource.model.ResourceType;
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.Multibinder;
 
 public class WorkspaceActivityModule extends AbstractModule {
 
@@ -26,5 +29,8 @@ public class WorkspaceActivityModule extends AbstractModule {
         bind(ActivityPermissionsFilter.class);
         bind(WorkspaceActivityService.class);
         bind(WorkspaceActivityManager.class);
+
+        Multibinder.newSetBinder(binder(), ResourceType.class)
+                   .addBinding().to(TimeoutResourceType.class);
     }
 }

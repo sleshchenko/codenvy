@@ -64,6 +64,7 @@ import static java.util.Collections.singletonList;
  *
  * @author Yevhenii Voevodin
  * @author Igor Vinokur
+ * @author Sergii Leschenko
  */
 @Singleton
 public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
@@ -272,8 +273,10 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
             resourceUsageManager.checkResourcesAvailability(accountId, singletonList(ramToUse));
         } catch (NoEnoughResourcesException e) {
             final Resource requiredRam = e.getRequiredResources().get(0);// starting of workspace requires only RAM resource
-            final Resource availableRam = getRamResource(e.getAvailableResources());
-            final Resource usedRam = getRamResource(resourceUsageManager.getUsedResources(accountId));
+            final Resource availableRam = getResourceOrDefault(e.getAvailableResources(),
+                                                               RamResourceType.ID, 0, RamResourceType.UNIT);
+            final Resource usedRam = getResourceOrDefault(resourceUsageManager.getUsedResources(accountId),
+                                                          RamResourceType.ID, 0, RamResourceType.UNIT);
 
             throw new LimitExceededException(format("Workspace %s/%s needs %s to start. Your account has %s and %s in use. " +
                                                     "The workspace can't be start. Stop other workspaces or grant more resources.",
@@ -293,8 +296,9 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
                                                                                                        1,
                                                                                                        WorkspaceResourceType.UNIT)));
         } catch (NoEnoughResourcesException e) {
-            List<? extends Resource> availableResources = e.getAvailableResources();
-            long totalAvailableWorkspaces = availableResources.isEmpty() ? 0 : availableResources.get(0).getAmount();
+            Optional<? extends Resource> workspaceResource = getResource(e.getAvailableResources(),
+                                                                         WorkspaceResourceType.ID);
+            long totalAvailableWorkspaces = workspaceResource.isPresent() ? workspaceResource.get().getAmount() : 0;
             throw new LimitExceededException(format("You are only allowed to create %d workspace%s.",
                                                     totalAvailableWorkspaces,
                                                     totalAvailableWorkspaces == 1 ? "" : "s"),
@@ -310,8 +314,9 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
                                                                                                        1,
                                                                                                        RuntimeResourceType.UNIT)));
         } catch (NoEnoughResourcesException e) {
-            List<? extends Resource> availableResources = e.getAvailableResources();
-            long totalAvailableRuntimes = availableResources.isEmpty() ? 0 : availableResources.get(0).getAmount();
+            Optional<? extends Resource> runtimeResource = getResource(e.getAvailableResources(),
+                                                                       RuntimeResourceType.ID);
+            long totalAvailableRuntimes = runtimeResource.isPresent() ? runtimeResource.get().getAmount() : 0;
             throw new LimitExceededException(format("You are only allowed to start %d workspace%s.",
                                                     totalAvailableRuntimes,
                                                     totalAvailableRuntimes == 1 ? "" : "s"));
@@ -319,17 +324,24 @@ public class LimitsCheckingWorkspaceManager extends WorkspaceManager {
     }
 
     /**
-     * Returns RAM resources from list or RAM resource with 0 amount it list doesn't contain it
+     * Returns resource with specified type from list or resource with specified default amount if list doesn't contain it
      */
-    private Resource getRamResource(List<? extends Resource> resources) {
-        Optional<? extends Resource> ramOpt = resources.stream()
-                                                       .filter(r -> r.getType().equals(RamResourceType.ID))
-                                                       .findAny();
-        if (ramOpt.isPresent()) {
-            return ramOpt.get();
+    private Resource getResourceOrDefault(List<? extends Resource> resources, String resourceType, long defaultAmount, String defaultUnit) {
+        Optional<? extends Resource> resource = getResource(resources, resourceType);
+        if (resource.isPresent()) {
+            return resource.get();
         } else {
-            return new ResourceImpl(RamResourceType.ID, 0, RamResourceType.UNIT);
+            return new ResourceImpl(resourceType, defaultAmount, defaultUnit);
         }
+    }
+
+    /**
+     * Returns resource with specified type from list
+     */
+    private Optional<? extends Resource> getResource(List<? extends Resource> resources, String resourceType) {
+        return resources.stream()
+                        .filter(r -> r.getType().equals(resourceType))
+                        .findAny();
     }
 
     private String printResourceInfo(Resource resource) {
