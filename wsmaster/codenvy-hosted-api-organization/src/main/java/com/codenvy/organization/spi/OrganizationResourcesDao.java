@@ -14,18 +14,18 @@
  */
 package com.codenvy.organization.spi;
 
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
 
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
 
 /**
- * Defines data access object contract for {@link OrganizationDistributedResourcesImpl}.
+ * Defines data access object contract for {@link OrganizationResourcesImpl}.
  *
  * @author Sergii Leschenko
  */
-public interface OrganizationDistributedResourcesDao {
+public interface OrganizationResourcesDao {
     /**
      * Stores (creates or updated) distributed resources for suborganization.
      *
@@ -36,7 +36,7 @@ public interface OrganizationDistributedResourcesDao {
      * @throws ServerException
      *         when any other error occurs
      */
-    void store(OrganizationDistributedResourcesImpl distributedResources) throws ServerException;
+    void store(OrganizationResourcesImpl distributedResources) throws ServerException;
 
     /**
      * Returns distributed resources for specified suborganization.
@@ -51,7 +51,7 @@ public interface OrganizationDistributedResourcesDao {
      * @throws ServerException
      *         when any other error occurs
      */
-    OrganizationDistributedResourcesImpl get(String organizationId) throws NotFoundException, ServerException;
+    OrganizationResourcesImpl get(String organizationId) throws NotFoundException, ServerException;
 
     /**
      * Returns distributed resources for suborganizations of given parent organization.
@@ -64,7 +64,7 @@ public interface OrganizationDistributedResourcesDao {
      * @throws ServerException
      *         when any other error occurs
      */
-    Page<OrganizationDistributedResourcesImpl> getByParent(String organizationId, int maxItems, long skipCount) throws ServerException;
+    Page<OrganizationResourcesImpl> getByParent(String organizationId, int maxItems, long skipCount) throws ServerException;
 
     /**
      * Remove distributed organization resources.

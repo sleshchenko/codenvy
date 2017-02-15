@@ -14,10 +14,10 @@
  */
 package com.codenvy.organization.api;
 
-import com.codenvy.organization.shared.dto.OrganizationDistributedResourcesDto;
 import com.codenvy.organization.shared.dto.OrganizationDto;
+import com.codenvy.organization.shared.dto.OrganizationResourcesDto;
 import com.codenvy.organization.shared.model.Organization;
-import com.codenvy.organization.shared.model.OrganizationDistributedResources;
+import com.codenvy.organization.shared.model.OrganizationResources;
 
 import org.eclipse.che.dto.server.DtoFactory;
 
@@ -38,12 +38,16 @@ public final class DtoConverter {
                          .withParent(organization.getParent());
     }
 
-    public static OrganizationDistributedResourcesDto asDto(OrganizationDistributedResources distributedResources) {
-        return DtoFactory.newDto(OrganizationDistributedResourcesDto.class)
+    public static OrganizationResourcesDto asDto(OrganizationResources distributedResources) {
+        return DtoFactory.newDto(OrganizationResourcesDto.class)
                          .withOrganizationId(distributedResources.getOrganizationId())
-                         .withResources(distributedResources.getResources()
-                                                            .stream()
-                                                            .map(com.codenvy.resource.api.DtoConverter::asDto)
-                                                            .collect(Collectors.toList()));
+                         .withResourcesCap(distributedResources.getResourcesCap()
+                                                               .stream()
+                                                               .map(com.codenvy.resource.api.DtoConverter::asDto)
+                                                               .collect(Collectors.toList()))
+                         .withReservedResources(distributedResources.getReservedResources()
+                                                                    .stream()
+                                                                    .map(com.codenvy.resource.api.DtoConverter::asDto)
+                                                                    .collect(Collectors.toList()));
     }
 }

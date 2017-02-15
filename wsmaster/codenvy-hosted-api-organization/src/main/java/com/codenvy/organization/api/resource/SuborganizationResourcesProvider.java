@@ -14,14 +14,18 @@
  */
 package com.codenvy.organization.api.resource;
 
-import com.codenvy.activity.server.TimeoutResourceType;
 import com.codenvy.organization.api.OrganizationManager;
+import com.codenvy.organization.shared.model.OrganizationResources;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
+import com.codenvy.resource.api.ResourceAggregator;
+import com.codenvy.resource.api.exception.NoEnoughResourcesException;
 import com.codenvy.resource.api.license.ResourcesProvider;
 import com.codenvy.resource.api.usage.ResourceUsageManager;
 import com.codenvy.resource.model.ProvidedResources;
 import com.codenvy.resource.model.Resource;
 import com.codenvy.resource.spi.impl.ProvidedResourcesImpl;
+import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
@@ -31,13 +35,16 @@ import org.eclipse.che.api.core.ServerException;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Provides resources that are shared for suborganization by its parent organization
@@ -49,16 +56,19 @@ public class SuborganizationResourcesProvider implements ResourcesProvider {
     public static final String PARENT_RESOURCES_PROVIDER = "parentOrganization";
 
     private final AccountManager                             accountManager;
+    private final ResourceAggregator                         resourceAggregator;
     private final OrganizationManager                        organizationManager;
     private final Provider<OrganizationResourcesDistributor> distributorProvider;
     private final Provider<ResourceUsageManager>             usageManagerProvider;
 
     @Inject
     public SuborganizationResourcesProvider(AccountManager accountManager,
+                                            ResourceAggregator resourceAggregator,
                                             OrganizationManager organizationManager,
                                             Provider<OrganizationResourcesDistributor> distributorProvider,
                                             Provider<ResourceUsageManager> usageManagerProvider) {
         this.accountManager = accountManager;
+        this.resourceAggregator = resourceAggregator;
         this.organizationManager = organizationManager;
         this.distributorProvider = distributorProvider;
         this.usageManagerProvider = usageManagerProvider;
@@ -68,49 +78,67 @@ public class SuborganizationResourcesProvider implements ResourcesProvider {
     public List<ProvidedResources> getResources(String accountId) throws ServerException,
                                                                          NotFoundException {
         final Account account = accountManager.getById(accountId);
-
         String parent;
         if (OrganizationImpl.ORGANIZATIONAL_ACCOUNT.equals(account.getType())
             && (parent = organizationManager.getById(accountId).getParent()) != null) {
             // given account is suborganization's account and can have resources provided by parent
-            final List<Resource> sharedResources = getDistributedResources(accountId);
+            OrganizationResources organizationResources = getOrganizationResources(accountId);
 
-            Optional<? extends Resource> timeout = findTimeoutResource(sharedResources);
-            if (!timeout.isPresent()) {
-                List<? extends Resource> parentResources = usageManagerProvider.get().getAvailableResources(parent);
-                findTimeoutResource(parentResources).ifPresent(sharedResources::add);
-            }
+            Collection<Resource> totalResources = resourceAggregator.aggregateByType(getSharedResources(parent),
+                                                                                     organizationResources.getReservedResources()).values();
 
-            if (!sharedResources.isEmpty()) {
+            if (!totalResources.isEmpty()) {
                 return singletonList(new ProvidedResourcesImpl(PARENT_RESOURCES_PROVIDER,
                                                                null,
                                                                accountId,
                                                                -1L,
                                                                -1L,
-                                                               sharedResources));
+                                                               cap(totalResources,
+                                                                   organizationResources.getResourcesCap())));
             }
         }
 
         return Collections.emptyList();
     }
 
-    private Optional<? extends Resource> findTimeoutResource(List<? extends Resource> resources) {
-        return resources.stream()
-                        .filter(resource -> resource.getType().equals(TimeoutResourceType.ID))
-                        .findAny();
+    private final List<ResourceImpl> cap(Collection<? extends Resource> source, List<? extends Resource> caps) {
+        final Map<String, Resource> resourcesCaps = caps.stream()
+                                                        .collect(toMap(Resource::getType,
+                                                                       Function.identity()));
+        return source.stream()
+                     .map(resource -> {
+                         Resource resourceCap = resourcesCaps.get(resource.getType());
+                         if (resourceCap != null &&
+                             resourceCap.getAmount() < resource.getAmount()) {
+                             return resourceCap;
+                         }
+                         return resource;
+                     })
+                     .map(ResourceImpl::new)
+                     .collect(Collectors.toList());
     }
 
-    private List<Resource> getDistributedResources(String accountId) throws ServerException {
-        final List<Resource> distributedResources = new ArrayList<>();
+    private OrganizationResources getOrganizationResources(String accountId) throws ServerException {
         try {
-            distributorProvider.get()
-                               .get(accountId)
-                               .getResources()
-                               .stream()
-                               .map(resource -> (Resource)resource)
-                               .collect(Collectors.toCollection(() -> distributedResources));
-        } catch (NotFoundException ignored) {
+            return distributorProvider.get().get(accountId);
+        } catch (NotFoundException n) {
+            return new OrganizationResourcesImpl(accountId, emptyList(), emptyList());
         }
-        return distributedResources;
+    }
+
+    private List<? extends Resource> getSharedResources(String parentId) throws NotFoundException, ServerException {
+        List<? extends Resource> parentTotalResources = usageManagerProvider.get().getTotalResources(parentId);
+        try {
+            OrganizationResources parentOrganizationResources = distributorProvider.get().get(parentId);
+            try {
+                return resourceAggregator.deduct(parentTotalResources, parentOrganizationResources.getReservedResources());
+            } catch (NoEnoughResourcesException e) {
+                //TODO Handle this
+                throw new ServerException(e.getLocalizedMessage(), e);
+            }
+        } catch (NotFoundException ignored) {
+            // parent org doesn't reserve resources for itself
+            return parentTotalResources;
+        }
     }
 }

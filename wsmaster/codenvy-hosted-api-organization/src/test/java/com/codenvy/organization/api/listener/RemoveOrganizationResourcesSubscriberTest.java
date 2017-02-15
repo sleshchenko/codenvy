@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @author Sergii Leschenko
  */
 @Listeners(MockitoTestNGListener.class)
-public class RemoveOrganizationDistributedResourcesSubscriberTest {
+public class RemoveOrganizationResourcesSubscriberTest {
     @Mock
     private EventService                     eventService;
     @Mock

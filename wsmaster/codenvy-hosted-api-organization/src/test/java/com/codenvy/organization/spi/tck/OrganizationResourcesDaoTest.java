@@ -14,9 +14,9 @@
  */
 package com.codenvy.organization.spi.tck;
 
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
+import com.codenvy.organization.spi.OrganizationResourcesDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.api.core.NotFoundException;
@@ -37,42 +37,45 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 /**
- * Tests for {@link OrganizationDistributedResourcesDao}
+ * Tests for {@link OrganizationResourcesDao}
  *
  * @author Sergii Leschenko
  */
 @Listeners(TckListener.class)
-@Test(suiteName = OrganizationDistributedResourcesDaoTest.SUITE_NAME)
-public class OrganizationDistributedResourcesDaoTest {
+@Test(suiteName = OrganizationResourcesDaoTest.SUITE_NAME)
+public class OrganizationResourcesDaoTest {
     public static final String SUITE_NAME = "OrganizationDistributedResourcesDaoTck";
 
     private static final String TEST_RESOURCE_TYPE           = "Test";
     private static final int    ORGANIZATION_RESOURCES_COUNT = 3;
 
-    private OrganizationDistributedResourcesImpl[] distributedResources;
-    private OrganizationImpl                       parentOrganization;
-    private OrganizationImpl[]                     suborganizations;
+    private OrganizationResourcesImpl[] distributedResources;
+    private OrganizationImpl            parentOrganization;
+    private OrganizationImpl[]          suborganizations;
 
     @Inject
-    private TckRepository<OrganizationDistributedResourcesImpl> distributedResourcesRepository;
+    private TckRepository<OrganizationResourcesImpl> distributedResourcesRepository;
 
     @Inject
     private TckRepository<OrganizationImpl> organizationsRepository;
 
     @Inject
-    private OrganizationDistributedResourcesDao distributedResourcesDao;
+    private OrganizationResourcesDao distributedResourcesDao;
 
     @BeforeMethod
     private void setUp() throws Exception {
         parentOrganization = new OrganizationImpl("parentOrg", "parentOrgName", null);
         suborganizations = new OrganizationImpl[ORGANIZATION_RESOURCES_COUNT];
-        distributedResources = new OrganizationDistributedResourcesImpl[ORGANIZATION_RESOURCES_COUNT];
+        distributedResources = new OrganizationResourcesImpl[ORGANIZATION_RESOURCES_COUNT];
         for (int i = 0; i < ORGANIZATION_RESOURCES_COUNT; i++) {
             suborganizations[i] = new OrganizationImpl("suborgId-" + i, "suborgName" + i, parentOrganization.getId());
-            distributedResources[i] = new OrganizationDistributedResourcesImpl(suborganizations[i].getId(),
-                                                                               singletonList(new ResourceImpl(TEST_RESOURCE_TYPE,
-                                                                                                              i,
-                                                                                                              "test")));
+            distributedResources[i] = new OrganizationResourcesImpl(suborganizations[i].getId(),
+                                                                    singletonList(new ResourceImpl(TEST_RESOURCE_TYPE,
+                                                                                                   i,
+                                                                                                   "test")),
+                                                                    singletonList(new ResourceImpl(TEST_RESOURCE_TYPE,
+                                                                                                   i,
+                                                                                                   "test")));
         }
         organizationsRepository.createAll(Collections.singletonList(parentOrganization));
         organizationsRepository.createAll(Arrays.asList(suborganizations));
@@ -88,7 +91,7 @@ public class OrganizationDistributedResourcesDaoTest {
     @Test
     public void shouldCreateDistributedResourcesWhenStoringNotExistentOne() throws Exception {
         //given
-        OrganizationDistributedResourcesImpl toStore = distributedResources[0];
+        OrganizationResourcesImpl toStore = distributedResources[0];
         distributedResourcesDao.remove(toStore.getOrganizationId());
 
         //when
@@ -101,11 +104,13 @@ public class OrganizationDistributedResourcesDaoTest {
     @Test
     public void shouldUpdateDistributedResourcesWhenStoringExistentOne() throws Exception {
         //given
-        OrganizationDistributedResourcesImpl toStore = new OrganizationDistributedResourcesImpl(distributedResources[0].getOrganizationId(),
-                                                                                                singletonList(
-                                                                                                        new ResourceImpl(TEST_RESOURCE_TYPE,
-                                                                                                                         1000,
-                                                                                                                         "unit")));
+        OrganizationResourcesImpl toStore = new OrganizationResourcesImpl(distributedResources[0].getOrganizationId(),
+                                                                          singletonList(new ResourceImpl(TEST_RESOURCE_TYPE,
+                                                                                                         1000,
+                                                                                                         "unit")),
+                                                                          singletonList(new ResourceImpl(TEST_RESOURCE_TYPE,
+                                                                                                         1000,
+                                                                                                         "unit")));
 
         //when
         distributedResourcesDao.store(toStore);
@@ -123,10 +128,10 @@ public class OrganizationDistributedResourcesDaoTest {
     @Test
     public void shouldGetDistributedResourcesForSpecifiedOrganizationId() throws Exception {
         //given
-        OrganizationDistributedResourcesImpl stored = distributedResources[0];
+        OrganizationResourcesImpl stored = distributedResources[0];
 
         //when
-        OrganizationDistributedResourcesImpl fetched = distributedResourcesDao.get(stored.getOrganizationId());
+        OrganizationResourcesImpl fetched = distributedResourcesDao.get(stored.getOrganizationId());
 
         //then
         assertEquals(fetched, copy(stored));
@@ -147,7 +152,7 @@ public class OrganizationDistributedResourcesDaoTest {
     @Test
     public void shouldGetDistributedResourcesByParent() throws Exception {
         //when
-        final Page<OrganizationDistributedResourcesImpl> children = distributedResourcesDao.getByParent(parentOrganization.getId(), 1, 1);
+        final Page<OrganizationResourcesImpl> children = distributedResourcesDao.getByParent(parentOrganization.getId(), 1, 1);
 
         //then
         assertEquals(children.getTotalItemsCount(), 3);
@@ -166,7 +171,7 @@ public class OrganizationDistributedResourcesDaoTest {
     @Test(expectedExceptions = NotFoundException.class)
     public void shouldRemoveDistributedResources() throws Exception {
         //given
-        OrganizationDistributedResourcesImpl distributedResource = distributedResources[0];
+        OrganizationResourcesImpl distributedResource = distributedResources[0];
 
         //when
         distributedResourcesDao.remove(distributedResource.getOrganizationId());
@@ -181,7 +186,7 @@ public class OrganizationDistributedResourcesDaoTest {
         distributedResourcesDao.remove(null);
     }
 
-    private OrganizationDistributedResourcesImpl copy(OrganizationDistributedResourcesImpl distributedResource) {
-        return new OrganizationDistributedResourcesImpl(distributedResource);
+    private OrganizationResourcesImpl copy(OrganizationResourcesImpl distributedResource) {
+        return new OrganizationResourcesImpl(distributedResource);
     }
 }

@@ -33,7 +33,6 @@ import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.commons.env.EnvironmentContext;
-import org.eclipse.che.commons.lang.NameGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -87,7 +86,8 @@ public class OrganizationManager {
     public Organization create(Organization newOrganization) throws ConflictException, ServerException {
         requireNonNull(newOrganization, "Required non-null organization");
         checkNameReservation(newOrganization.getName());
-        final OrganizationImpl organization = new OrganizationImpl(NameGenerator.generate("organization", 16),
+        final OrganizationImpl organization = new OrganizationImpl(newOrganization.getName(),
+//TODO Fix                NameGenerator.generate("organization", 16),
                                                                    newOrganization.getName(),
                                                                    newOrganization.getParent());
         organizationDao.create(organization);
@@ -199,7 +199,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organizations fetching
      */
-    public Page<? extends Organization> getByParent(String parent, int maxItems, int skipCount) throws ServerException {
+    public Page<? extends Organization> getByParent(String parent, int maxItems, long skipCount) throws ServerException {
         requireNonNull(parent, "Required non-null parent");
         return organizationDao.getByParent(parent, maxItems, skipCount);
     }

@@ -17,8 +17,9 @@ package com.codenvy.organization.api.resource;
 import com.codenvy.activity.server.TimeoutResourceType;
 import com.codenvy.organization.api.OrganizationManager;
 import com.codenvy.organization.shared.model.Organization;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
+import com.codenvy.resource.api.ResourceAggregator;
 import com.codenvy.resource.api.usage.ResourceUsageManager;
 import com.codenvy.resource.model.ProvidedResources;
 import com.codenvy.resource.spi.impl.ProvidedResourcesImpl;
@@ -61,6 +62,8 @@ public class SuborganizationResourcesProviderTest {
     private Organization organization;
 
     @Mock
+    private ResourceAggregator                         resourceAggregator;
+    @Mock
     private AccountManager                             accountManager;
     @Mock
     private OrganizationManager                        organizationManager;
@@ -85,6 +88,7 @@ public class SuborganizationResourcesProviderTest {
         when(usageManagerProvider.get()).thenReturn(resourceUsageManager);
 
         suborganizationResourcesProvider = new SuborganizationResourcesProvider(accountManager,
+                                                                                resourceAggregator,
                                                                                 organizationManager,
                                                                                 distributorProvider,
                                                                                 usageManagerProvider);
@@ -129,9 +133,9 @@ public class SuborganizationResourcesProviderTest {
         final ResourceImpl timeoutResource = new ResourceImpl(TimeoutResourceType.ID,
                                                               20,
                                                               TimeoutResourceType.UNIT);
-        OrganizationDistributedResourcesImpl distributedResources = new OrganizationDistributedResourcesImpl("organization123",
-                                                                                                             asList(testResource,
-                                                                                                                    timeoutResource));
+        OrganizationResourcesImpl distributedResources = new OrganizationResourcesImpl("organization123",
+                                                                                       asList(testResource, timeoutResource),
+                                                                                       asList(testResource, timeoutResource));
         when(resourcesDistributor.get(any())).thenReturn(distributedResources);
 
         //when

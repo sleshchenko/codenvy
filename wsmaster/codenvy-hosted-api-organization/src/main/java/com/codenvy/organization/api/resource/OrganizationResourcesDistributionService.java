@@ -21,8 +21,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 
 import com.codenvy.organization.api.DtoConverter;
-import com.codenvy.organization.shared.dto.OrganizationDistributedResourcesDto;
-import com.codenvy.organization.shared.model.OrganizationDistributedResources;
+import com.codenvy.organization.shared.dto.OrganizationResourcesDto;
+import com.codenvy.organization.shared.model.OrganizationResources;
 import com.codenvy.resource.api.free.ResourceValidator;
 import com.codenvy.resource.shared.dto.ResourceDto;
 
@@ -45,9 +45,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
+import static com.codenvy.organization.api.DtoConverter.asDto;
 import static java.lang.String.format;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
@@ -70,7 +70,6 @@ public class OrganizationResourcesDistributionService extends Service {
     }
 
     @POST
-    @Path("/{suborganizationId}")
     @Consumes(APPLICATION_JSON)
     @ApiOperation(value = "Distribute resources for suborganization.",
                   notes = "Distributed resources is unavailable for usage by parent organization." +
@@ -83,14 +82,19 @@ public class OrganizationResourcesDistributionService extends Service {
                    @ApiResponse(code = 409, message = "Suborganization doesn't have enough available resources " +
                                                       "(which are not in use and not distributed)"),
                    @ApiResponse(code = 500, message = "Internal server error occurred")})
-    public void distribute(@ApiParam("Suborganization id")
-                           @PathParam("suborganizationId") String suborganizationId,
-                           @ApiParam("Resources to distribute") List<ResourceDto> resources) throws BadRequestException,
-                                                                                                    ServerException,
-                                                                                                    ConflictException,
-                                                                                                    NotFoundException {
+    public void distribute(@ApiParam("Resources to distribute") OrganizationResourcesDto resources) throws BadRequestException,
+                                                                                                           ServerException,
+                                                                                                           ConflictException,
+                                                                                                           NotFoundException {
         Set<String> resourcesToSet = new HashSet<>();
-        for (ResourceDto resource : resources) {
+        for (ResourceDto resource : resources.getReservedResources()) {
+            if (!resourcesToSet.add(resource.getType())) {
+                throw new BadRequestException(format("Resources to distribute must contain only one resource with type '%s'.",
+                                                     resource.getType()));
+            }
+            resourceValidator.validate(resource);
+        }
+        for (ResourceDto resource : resources.getResourcesCap()) {
             if (!resourcesToSet.add(resource.getType())) {
                 throw new BadRequestException(format("Resources to distribute must contain only one resource with type '%s'.",
                                                      resource.getType()));
@@ -98,36 +102,52 @@ public class OrganizationResourcesDistributionService extends Service {
             resourceValidator.validate(resource);
         }
 
-        resourcesDistributor.distribute(suborganizationId, resources);
+        resourcesDistributor.distribute(resources);
+    }
+
+    @GET
+    @Path("/parent/{organizationId}")
+    @Produces(APPLICATION_JSON)
+    @ApiOperation(value = "Get distributed resources for suborganizations.",
+                  response = OrganizationResourcesDto.class,
+                  responseContainer = "list")
+    @ApiResponses({@ApiResponse(code = 200, message = "Distributed resources successfully fetched"),
+                   @ApiResponse(code = 400, message = "Missed required parameters, parameters are not valid"),
+                   @ApiResponse(code = 500, message = "Internal server error occurred")})
+    public Response getDistributedResourcesByParent(@ApiParam("Organization id")
+                                                    @PathParam("organizationId") String organizationId,
+                                                    @ApiParam(value = "Max items")
+                                                    @QueryParam("maxItems") @DefaultValue("30") int maxItems,
+                                                    @ApiParam(value = "Skip count")
+                                                    @QueryParam("skipCount") @DefaultValue("0") long skipCount) throws BadRequestException,
+                                                                                                                       ServerException {
+
+        checkArgument(maxItems >= 0, "The number of items to return can't be negative.");
+        checkArgument(skipCount >= 0, "The number of items to skip can't be negative.");
+
+        final Page<? extends OrganizationResources> distributedResourcesPage = resourcesDistributor.getByParent(organizationId,
+                                                                                                                maxItems,
+                                                                                                                skipCount);
+        return Response.ok()
+                       .entity(distributedResourcesPage.getItems(DtoConverter::asDto))
+                       .header("Link", createLinkHeader(distributedResourcesPage))
+                       .build();
     }
 
     @GET
     @Path("/{organizationId}")
     @Produces(APPLICATION_JSON)
     @ApiOperation(value = "Get distributed resources for suborganizations.",
-                  response = OrganizationDistributedResourcesDto.class,
+                  response = OrganizationResourcesDto.class,
                   responseContainer = "list")
     @ApiResponses({@ApiResponse(code = 200, message = "Distributed resources successfully fetched"),
                    @ApiResponse(code = 400, message = "Missed required parameters, parameters are not valid"),
                    @ApiResponse(code = 500, message = "Internal server error occurred")})
-    public Response getDistributedResources(@ApiParam("Organization id")
-                                            @PathParam("organizationId") String organizationId,
-                                            @ApiParam(value = "Max items")
-                                            @QueryParam("maxItems") @DefaultValue("30") int maxItems,
-                                            @ApiParam(value = "Skip count")
-                                            @QueryParam("skipCount") @DefaultValue("0") long skipCount) throws ServerException,
-                                                                                                               BadRequestException {
+    public OrganizationResourcesDto getDistributedResources(@ApiParam("Organization id")
+                                                            @PathParam("organizationId") String organizationId) throws NotFoundException,
+                                                                                                                       ServerException {
 
-        checkArgument(maxItems >= 0, "The number of items to return can't be negative.");
-        checkArgument(skipCount >= 0, "The number of items to skip can't be negative.");
-
-        final Page<? extends OrganizationDistributedResources> distributedResourcesPage = resourcesDistributor.getByParent(organizationId,
-                                                                                                                           maxItems,
-                                                                                                                           skipCount);
-        return Response.ok()
-                       .entity(distributedResourcesPage.getItems(DtoConverter::asDto))
-                       .header("Link", createLinkHeader(distributedResourcesPage))
-                       .build();
+        return asDto(resourcesDistributor.get(organizationId));
     }
 
     @DELETE

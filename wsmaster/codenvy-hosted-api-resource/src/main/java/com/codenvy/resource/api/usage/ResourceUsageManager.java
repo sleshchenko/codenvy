@@ -20,7 +20,6 @@ import com.codenvy.resource.api.ResourcesReserveTracker;
 import com.codenvy.resource.api.exception.NoEnoughResourcesException;
 import com.codenvy.resource.api.license.AccountLicenseManager;
 import com.codenvy.resource.model.Resource;
-import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
@@ -39,6 +38,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -127,6 +127,28 @@ public class ResourceUsageManager {
     }
 
     /**
+     * Returns list of resources which are reserved and not available for usage for given account.
+     *
+     * @param accountId
+     *         id of account
+     * @return list of resources which are reserved
+     * @throws NotFoundException
+     *         when account with specified id was not found
+     * @throws ServerException
+     *         when some exception occurred while resources fetching
+     */
+    public List<? extends Resource> getReservedResources(String accountId) throws NotFoundException, ServerException {
+        final Account account = accountManager.getById(accountId);
+        final ResourcesReserveTracker resourcesReserveTracker = accountTypeToReserveTracker.get(account.getType());
+
+        if (resourcesReserveTracker == null) {
+            return emptyList();
+        }
+
+        return resourcesReserveTracker.getReservedResources(accountId);
+    }
+
+    /**
      * Returns list of resources which are used by given account.
      *
      * @param accountId
@@ -138,12 +160,10 @@ public class ResourceUsageManager {
      *         when some exception occurred while resources fetching
      */
     public List<? extends Resource> getUsedResources(String accountId) throws NotFoundException, ServerException {
-        List<ResourceImpl> usedResources = new ArrayList<>();
+        List<Resource> usedResources = new ArrayList<>();
         for (ResourceUsageTracker usageTracker : usageTrackers) {
-            Optional<ResourceImpl> usedResource = usageTracker.getUsedResource(accountId);
-            if (usedResource.isPresent()) {
-                usedResources.add(usedResource.get());
-            }
+            Optional<Resource> usedResource = usageTracker.getUsedResource(accountId);
+            usedResource.ifPresent(usedResources::add);
         }
         return usedResources;
     }

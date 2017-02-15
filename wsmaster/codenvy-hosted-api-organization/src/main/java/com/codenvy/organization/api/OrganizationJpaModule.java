@@ -20,11 +20,11 @@ import com.codenvy.api.permission.server.spi.PermissionsDao;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.OrganizationResourcesDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 import com.codenvy.organization.spi.jpa.JpaMemberDao;
 import com.codenvy.organization.spi.jpa.JpaOrganizationDao;
-import com.codenvy.organization.spi.jpa.JpaOrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.jpa.JpaOrganizationResourcesDao;
 import com.google.inject.AbstractModule;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
@@ -43,6 +43,6 @@ public class OrganizationJpaModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), new TypeLiteral<PermissionsDao<? extends AbstractPermissions>>() {})
                    .addBinding().to(JpaMemberDao.class);
 
-        bind(OrganizationDistributedResourcesDao.class).to(JpaOrganizationDistributedResourcesDao.class);
+        bind(OrganizationResourcesDao.class).to(JpaOrganizationResourcesDao.class);
     }
 }

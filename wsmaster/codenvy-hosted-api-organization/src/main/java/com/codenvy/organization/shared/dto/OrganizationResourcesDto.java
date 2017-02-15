@@ -14,7 +14,7 @@
  */
 package com.codenvy.organization.shared.dto;
 
-import com.codenvy.organization.shared.model.OrganizationDistributedResources;
+import com.codenvy.organization.shared.model.OrganizationResources;
 import com.codenvy.resource.shared.dto.ResourceDto;
 
 import org.eclipse.che.dto.shared.DTO;
@@ -25,18 +25,25 @@ import java.util.List;
  * @author Sergii Leschenko
  */
 @DTO
-public interface OrganizationDistributedResourcesDto extends OrganizationDistributedResources {
+public interface OrganizationResourcesDto extends OrganizationResources {
     @Override
     String getOrganizationId();
 
     void setOrganizationId(String organizationId);
 
-    OrganizationDistributedResourcesDto withOrganizationId(String organizationId);
+    OrganizationResourcesDto withOrganizationId(String organizationId);
 
     @Override
-    List<ResourceDto> getResources();
+    List<ResourceDto> getResourcesCap();
 
-    void setResources(List<ResourceDto> resources);
+    void setResourcesCap(List<ResourceDto> resourcesCap);
 
-    OrganizationDistributedResourcesDto withResources(List<ResourceDto> resources);
+    OrganizationResourcesDto withResourcesCap(List<ResourceDto> resourcesCap);
+
+    @Override
+    List<ResourceDto> getReservedResources();
+
+    void setReservedResources(List<ResourceDto> reservedResources);
+
+    OrganizationResourcesDto withReservedResources(List<ResourceDto> reservedResources);
 }

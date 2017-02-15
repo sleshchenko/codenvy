@@ -19,18 +19,23 @@ import com.codenvy.resource.model.Resource;
 import java.util.List;
 
 /**
- * Defines resources which are distributed for suborganization by parent organization
+ * TODO Fix doc
  *
  * @author Sergii Leschenko
  */
-public interface OrganizationDistributedResources {
+public interface OrganizationResources {
     /**
      * Id of organization that owns these distributed resources
      */
     String getOrganizationId();
 
     /**
-     * Returns resources that can be used.
+     * TODO Fix doc
      */
-    List<? extends Resource> getResources();
+    List<? extends Resource> getReservedResources();
+
+    /**
+     * TODO Fix doc
+     */
+    List<? extends Resource> getResourcesCap();
 }

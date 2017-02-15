@@ -36,13 +36,13 @@ import com.codenvy.api.workspace.server.stack.StackPermissionsImpl;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.OrganizationResourcesDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.codenvy.organization.spi.jpa.JpaMemberDao;
 import com.codenvy.organization.spi.jpa.JpaOrganizationDao;
-import com.codenvy.organization.spi.jpa.JpaOrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.jpa.JpaOrganizationResourcesDao;
 import com.codenvy.resource.spi.FreeResourcesLimitDao;
 import com.codenvy.resource.spi.impl.FreeResourcesLimitImpl;
 import com.codenvy.resource.spi.jpa.JpaFreeResourcesLimitDao;
@@ -200,8 +200,8 @@ public class JpaIntegrationTckModule extends TckModule {
         //api-organization
         bind(new TypeLiteral<TckRepository<OrganizationImpl>>() {}).to(JpaOrganizationImplTckRepository.class);
         bind(new TypeLiteral<TckRepository<MemberImpl>>() {}).toInstance(new JpaTckRepository<>(MemberImpl.class));
-        bind(new TypeLiteral<TckRepository<OrganizationDistributedResourcesImpl>>() {})
-                .toInstance(new JpaTckRepository<>(OrganizationDistributedResourcesImpl.class));
+        bind(new TypeLiteral<TckRepository<OrganizationResourcesImpl>>() {})
+                .toInstance(new JpaTckRepository<>(OrganizationResourcesImpl.class));
 
         //api-resource
         bind(new TypeLiteral<TckRepository<FreeResourcesLimitImpl>>() {}).toInstance(new JpaTckRepository<>(FreeResourcesLimitImpl.class));
@@ -231,7 +231,7 @@ public class JpaIntegrationTckModule extends TckModule {
         //api-organization
         bind(OrganizationDao.class).to(JpaOrganizationDao.class);
         bind(MemberDao.class).to(JpaMemberDao.class);
-        bind(OrganizationDistributedResourcesDao.class).to(JpaOrganizationDistributedResourcesDao.class);
+        bind(OrganizationResourcesDao.class).to(JpaOrganizationResourcesDao.class);
         bind(new TypeLiteral<PermissionsDao<MemberImpl>>() {}).to(JpaMemberDao.class);
         bind(new TypeLiteral<AbstractPermissionsDomain<MemberImpl>>() {}).to(OrganizationDomain.class);
         //api-license

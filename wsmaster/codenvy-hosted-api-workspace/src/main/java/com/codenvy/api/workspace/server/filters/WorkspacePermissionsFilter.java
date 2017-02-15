@@ -15,9 +15,6 @@
 package com.codenvy.api.workspace.server.filters;
 
 import com.codenvy.api.permission.server.SuperPrivilegesChecker;
-import com.codenvy.organization.api.permissions.OrganizationDomain;
-import com.google.api.client.repackaged.com.google.common.annotations.VisibleForTesting;
-import com.codenvy.api.permission.server.SystemDomain;
 import com.codenvy.api.permission.server.account.AccountAction;
 import com.codenvy.api.permission.server.account.AccountPermissionsChecker;
 

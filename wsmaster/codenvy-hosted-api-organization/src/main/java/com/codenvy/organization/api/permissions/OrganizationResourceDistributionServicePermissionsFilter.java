@@ -17,6 +17,7 @@ package com.codenvy.organization.api.permissions;
 import com.codenvy.api.permission.server.SuperPrivilegesChecker;
 import com.codenvy.organization.api.OrganizationManager;
 import com.codenvy.organization.api.resource.OrganizationResourcesDistributionService;
+import com.codenvy.organization.shared.dto.OrganizationResourcesDto;
 
 import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.ForbiddenException;
@@ -40,9 +41,10 @@ import javax.ws.rs.Path;
 @Filter
 @Path("/organization/resource{path:(/.*)?}")
 public class OrganizationResourceDistributionServicePermissionsFilter extends CheMethodInvokerFilter {
-    static final String DISTRIBUTE_RESOURCES_METHOD      = "distribute";
-    static final String GET_DISTRIBUTED_RESOURCES_METHOD = "getDistributedResources";
-    static final String RESET_DISTRIBUTED_RESOURCES      = "reset";
+    static final String DISTRIBUTE_RESOURCES_METHOD                 = "distribute";
+    static final String GET_DISTRIBUTED_RESOURCES_METHOD            = "getDistributedResources";
+    static final String GET_DISTRIBUTED_RESOURCES__BT_PARENT_METHOD = "getDistributedResourcesByParent";
+    static final String RESET_DISTRIBUTED_RESOURCES                 = "reset";
 
     @Inject
     private OrganizationManager    organizationManager;
@@ -57,6 +59,14 @@ public class OrganizationResourceDistributionServicePermissionsFilter extends Ch
         String organizationId;
         switch (methodName) {
             case DISTRIBUTE_RESOURCES_METHOD:
+                //we should check permissions on parent organization level
+                organizationId = organizationManager.getById(((OrganizationResourcesDto)arguments[0]).getOrganizationId()).getParent();
+                if (organizationId == null) {
+                    // requested organization is root so manager should throw exception
+                    return;
+                }
+                break;
+
             case RESET_DISTRIBUTED_RESOURCES:
                 //we should check permissions on parent organization level
                 organizationId = organizationManager.getById((String)arguments[0]).getParent();
@@ -75,6 +85,10 @@ public class OrganizationResourceDistributionServicePermissionsFilter extends Ch
                     return;
                 }
                 break;
+
+            case GET_DISTRIBUTED_RESOURCES__BT_PARENT_METHOD:
+                //TODO
+                return;
 
             default:
                 throw new ForbiddenException("The user does not have permission to perform this operation");

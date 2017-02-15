@@ -45,12 +45,10 @@ import static java.util.Objects.requireNonNull;
 public class JpaOrganizationDao implements OrganizationDao {
 
     private final Provider<EntityManager> managerProvider;
-    private final EventService            eventService;
 
     @Inject
-    public JpaOrganizationDao(Provider<EntityManager> managerProvider, EventService eventService) {
+    public JpaOrganizationDao(Provider<EntityManager> managerProvider) {
         this.managerProvider = managerProvider;
-        this.eventService = eventService;
     }
 
     @Override

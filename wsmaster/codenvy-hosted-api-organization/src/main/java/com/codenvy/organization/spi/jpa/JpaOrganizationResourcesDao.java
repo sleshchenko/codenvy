@@ -14,15 +14,14 @@
  */
 package com.codenvy.organization.spi.jpa;
 
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
+import com.codenvy.organization.spi.OrganizationResourcesDao;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
 import com.google.inject.persist.Transactional;
 
+import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -35,19 +34,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 /**
- * JPA based implementation of {@link OrganizationDistributedResourcesDao}.
+ * JPA based implementation of {@link OrganizationResourcesDao}.
  *
  * @author Sergii Leschenko
  */
 @Singleton
-public class JpaOrganizationDistributedResourcesDao implements OrganizationDistributedResourcesDao {
-    private static final Logger LOG = LoggerFactory.getLogger(JpaOrganizationDistributedResourcesDao.class);
-
+public class JpaOrganizationResourcesDao implements OrganizationResourcesDao {
     @Inject
     private Provider<EntityManager> managerProvider;
 
     @Override
-    public void store(OrganizationDistributedResourcesImpl distributedResources) throws ServerException {
+    public void store(OrganizationResourcesImpl distributedResources) throws ServerException {
         requireNonNull(distributedResources, "Required non-null distributed resources");
         try {
             doStore(distributedResources);
@@ -57,43 +54,42 @@ public class JpaOrganizationDistributedResourcesDao implements OrganizationDistr
     }
 
     @Override
-    @Transactional
-    public OrganizationDistributedResourcesImpl get(String organizationId) throws NotFoundException, ServerException {
+    @Transactional(rollbackOn = ApiException.class)
+    public OrganizationResourcesImpl get(String organizationId) throws NotFoundException, ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         try {
-            OrganizationDistributedResourcesImpl distributedResources = managerProvider.get()
-                                                                                       .find(OrganizationDistributedResourcesImpl.class,
-                                                                                             organizationId);
+            OrganizationResourcesImpl distributedResources = managerProvider.get()
+                                                                            .find(OrganizationResourcesImpl.class,
+                                                                                  organizationId);
             if (distributedResources == null) {
                 throw new NotFoundException("There are no distributed resources for organization with id '" + organizationId + "'.");
             }
 
-            return new OrganizationDistributedResourcesImpl(distributedResources);
+            return new OrganizationResourcesImpl(distributedResources);
         } catch (RuntimeException e) {
             throw new ServerException(e.getMessage(), e);
         }
     }
 
     @Override
-    @Transactional
-    public Page<OrganizationDistributedResourcesImpl> getByParent(String organizationId, int maxItems, long skipCount)
-            throws ServerException {
+    @Transactional(rollbackOn = ApiException.class)
+    public Page<OrganizationResourcesImpl> getByParent(String organizationId, int maxItems, long skipCount) throws ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         checkArgument(skipCount <= Integer.MAX_VALUE, "The number of items to skip can't be greater than " + Integer.MAX_VALUE);
         try {
             final EntityManager manager = managerProvider.get();
-            final List<OrganizationDistributedResourcesImpl> distributedResources =
-                    manager.createNamedQuery("OrganizationDistributedResources.getByParent",
-                                             OrganizationDistributedResourcesImpl.class)
+            final List<OrganizationResourcesImpl> distributedResources =
+                    manager.createNamedQuery("OrganizationResources.getByParent",
+                                             OrganizationResourcesImpl.class)
                            .setParameter("parent", organizationId)
                            .setMaxResults(maxItems)
                            .setFirstResult((int)skipCount)
                            .getResultList();
-            final Long distributedResourcesCount = manager.createNamedQuery("OrganizationDistributedResources.getCountByParent", Long.class)
+            final Long distributedResourcesCount = manager.createNamedQuery("OrganizationResources.getCountByParent", Long.class)
                                                           .setParameter("parent", organizationId)
                                                           .getSingleResult();
             return new Page<>(distributedResources.stream()
-                                                  .map(OrganizationDistributedResourcesImpl::new)
+                                                  .map(OrganizationResourcesImpl::new)
                                                   .collect(Collectors.toList()),
                               skipCount,
                               maxItems,
@@ -116,7 +112,7 @@ public class JpaOrganizationDistributedResourcesDao implements OrganizationDistr
     @Transactional
     protected void doRemove(String id) {
         EntityManager manager = managerProvider.get();
-        OrganizationDistributedResourcesImpl distributedResources = manager.find(OrganizationDistributedResourcesImpl.class, id);
+        OrganizationResourcesImpl distributedResources = manager.find(OrganizationResourcesImpl.class, id);
         if (distributedResources != null) {
             manager.remove(distributedResources);
             manager.flush();
@@ -124,15 +120,17 @@ public class JpaOrganizationDistributedResourcesDao implements OrganizationDistr
     }
 
     @Transactional
-    protected void doStore(OrganizationDistributedResourcesImpl distributedResources) throws ServerException {
+    protected void doStore(OrganizationResourcesImpl organizationResources) throws ServerException {
         EntityManager manager = managerProvider.get();
-        final OrganizationDistributedResourcesImpl existingDistributedResources = manager.find(OrganizationDistributedResourcesImpl.class,
-                                                                                               distributedResources.getOrganizationId());
+        final OrganizationResourcesImpl existingDistributedResources = manager.find(OrganizationResourcesImpl.class,
+                                                                                    organizationResources.getOrganizationId());
         if (existingDistributedResources == null) {
-            manager.persist(distributedResources);
+            manager.persist(organizationResources);
         } else {
-            existingDistributedResources.getResources().clear();
-            existingDistributedResources.getResources().addAll(distributedResources.getResources());
+            existingDistributedResources.getResourcesCap().clear();
+            existingDistributedResources.getResourcesCap().addAll(organizationResources.getResourcesCap());
+            existingDistributedResources.getReservedResources().clear();
+            existingDistributedResources.getReservedResources().addAll(organizationResources.getReservedResources());
         }
         manager.flush();
     }

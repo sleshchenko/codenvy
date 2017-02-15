@@ -18,13 +18,13 @@ import com.codenvy.api.permission.server.AbstractPermissionsDomain;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.OrganizationResourcesDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.codenvy.organization.spi.jpa.JpaMemberDao;
 import com.codenvy.organization.spi.jpa.JpaOrganizationDao;
-import com.codenvy.organization.spi.jpa.JpaOrganizationDistributedResourcesDao;
+import com.codenvy.organization.spi.jpa.JpaOrganizationResourcesDao;
 import com.codenvy.organization.spi.jpa.JpaOrganizationImplTckRepository;
 import com.google.inject.TypeLiteral;
 import com.google.inject.persist.jpa.JpaPersistModule;
@@ -58,12 +58,12 @@ public class OrganizationJpaTckModule extends TckModule {
         bind(new TypeLiteral<TckRepository<OrganizationImpl>>() {}).to(JpaOrganizationImplTckRepository.class);
         bind(new TypeLiteral<TckRepository<UserImpl>>() {}).toInstance(new JpaTckRepository<>(UserImpl.class));
         bind(new TypeLiteral<TckRepository<MemberImpl>>() {}).toInstance(new JpaTckRepository<>(MemberImpl.class));
-        bind(new TypeLiteral<TckRepository<OrganizationDistributedResourcesImpl>>() {})
-                .toInstance(new JpaTckRepository<>(OrganizationDistributedResourcesImpl.class));
+        bind(new TypeLiteral<TckRepository<OrganizationResourcesImpl>>() {})
+                .toInstance(new JpaTckRepository<>(OrganizationResourcesImpl.class));
 
         bind(OrganizationDao.class).to(JpaOrganizationDao.class);
         bind(MemberDao.class).to(JpaMemberDao.class);
 
-        bind(OrganizationDistributedResourcesDao.class).to(JpaOrganizationDistributedResourcesDao.class);
+        bind(OrganizationResourcesDao.class).to(JpaOrganizationResourcesDao.class);
     }
 }

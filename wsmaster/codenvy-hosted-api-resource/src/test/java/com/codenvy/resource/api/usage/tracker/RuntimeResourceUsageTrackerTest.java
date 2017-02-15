@@ -15,6 +15,7 @@
 package com.codenvy.resource.api.usage.tracker;
 
 import com.codenvy.resource.api.RuntimeResourceType;
+import com.codenvy.resource.model.Resource;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.account.api.AccountManager;
@@ -85,7 +86,7 @@ public class RuntimeResourceUsageTrackerTest {
 
         when(workspaceManager.getByNamespace(anyString(), anyBoolean())).thenReturn(singletonList(createWorkspace(WorkspaceStatus.STOPPED)));
 
-        Optional<ResourceImpl> usedRuntimesOpt = runtimeResourceUsageTracker.getUsedResource("account123");
+        Optional<Resource> usedRuntimesOpt = runtimeResourceUsageTracker.getUsedResource("account123");
 
         assertFalse(usedRuntimesOpt.isPresent());
     }
@@ -100,10 +101,10 @@ public class RuntimeResourceUsageTrackerTest {
                                   .map(RuntimeResourceUsageTrackerTest::createWorkspace)
                                   .collect(Collectors.toList()));
 
-        Optional<ResourceImpl> usedRuntimesOpt = runtimeResourceUsageTracker.getUsedResource("account123");
+        Optional<Resource> usedRuntimesOpt = runtimeResourceUsageTracker.getUsedResource("account123");
 
         assertTrue(usedRuntimesOpt.isPresent());
-        ResourceImpl usedRuntimes = usedRuntimesOpt.get();
+        Resource usedRuntimes = usedRuntimesOpt.get();
         assertEquals(usedRuntimes.getType(), RuntimeResourceType.ID);
         assertEquals(usedRuntimes.getAmount(), WorkspaceStatus.values().length - 1); //except stopped workspaces
         assertEquals(usedRuntimes.getUnit(), RuntimeResourceType.UNIT);

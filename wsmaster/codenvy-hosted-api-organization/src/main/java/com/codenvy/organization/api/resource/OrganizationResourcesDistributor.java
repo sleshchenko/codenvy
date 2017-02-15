@@ -15,9 +15,9 @@
 package com.codenvy.organization.api.resource;
 
 import com.codenvy.organization.api.OrganizationManager;
-import com.codenvy.organization.shared.model.OrganizationDistributedResources;
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
+import com.codenvy.organization.shared.model.OrganizationResources;
+import com.codenvy.organization.spi.OrganizationResourcesDao;
+import com.codenvy.organization.spi.impl.OrganizationResourcesImpl;
 import com.codenvy.resource.api.ResourceAggregator;
 import com.codenvy.resource.api.exception.NoEnoughResourcesException;
 import com.codenvy.resource.api.usage.ResourceUsageManager;
@@ -50,19 +50,19 @@ import static java.util.Objects.requireNonNull;
  */
 @Singleton
 public class OrganizationResourcesDistributor {
-    private final OrganizationDistributedResourcesDao organizationDistributedResourcesDao;
-    private final ResourcesLocks                      resourcesLocks;
-    private final ResourceUsageManager                usageManager;
-    private final ResourceAggregator                  resourceAggregator;
-    private final OrganizationManager                 organizationManager;
+    private final OrganizationResourcesDao organizationResourcesDao;
+    private final ResourcesLocks           resourcesLocks;
+    private final ResourceUsageManager     usageManager;
+    private final ResourceAggregator       resourceAggregator;
+    private final OrganizationManager      organizationManager;
 
     @Inject
-    public OrganizationResourcesDistributor(OrganizationDistributedResourcesDao organizationDistributedResourcesDao,
+    public OrganizationResourcesDistributor(OrganizationResourcesDao organizationResourcesDao,
                                             ResourcesLocks resourcesLocks,
                                             ResourceUsageManager usageManager,
                                             ResourceAggregator resourceAggregator,
                                             OrganizationManager organizationManager) {
-        this.organizationDistributedResourcesDao = organizationDistributedResourcesDao;
+        this.organizationResourcesDao = organizationResourcesDao;
         this.resourcesLocks = resourcesLocks;
         this.usageManager = usageManager;
         this.resourceAggregator = resourceAggregator;
@@ -96,23 +96,27 @@ public class OrganizationResourcesDistributor {
      * @throws ServerException
      *         when any other error occurs
      */
-    public void distribute(String suborganizationId, List<? extends Resource> resources) throws NotFoundException,
-                                                                                                ConflictException,
-                                                                                                ServerException {
-        requireNonNull(suborganizationId, "Required non-null suborganization id");
-        requireNonNull(resources, "Required non-null resources to distribute");
-        checkArgument(!resources.isEmpty(), "Required at least one resource to distribute");
+    public void distribute(OrganizationResources organizationResources) throws NotFoundException,
+                                                                               ConflictException,
+                                                                               ServerException {
+        requireNonNull(organizationResources, "Required non-null resources");
+        String organizationId = organizationResources.getOrganizationId();
+        requireNonNull(organizationId, "Required non-null suborganization id");
+        requireNonNull(organizationResources.getReservedResources(), "Required non-null resources to distribute");
+        requireNonNull(organizationResources.getResourcesCap(), "Required non-null resources to distribute");
+        checkArgument(!organizationResources.getReservedResources().isEmpty() || !organizationResources.getResourcesCap().isEmpty(),
+                      "Required at least one resource to distribute");
 
         // locking resources by suborganization should lock resources whole organization tree
         // so we can check resource availability for suborganization and parent organization
         // TODO Rework it to using resourcesLocks.acquiresLock(suborganizationId, parentOrganizationId) when it will be implemented
-        try (@SuppressWarnings("unused") Unlocker u = resourcesLocks.acquiresLock(suborganizationId)) {
-            checkResourcesAvailability(suborganizationId,
-                                       getDistributionOrganization(suborganizationId),
-                                       getDistributedResources(suborganizationId),
-                                       resources);
+        try (@SuppressWarnings("unused") Unlocker u = resourcesLocks.acquiresLock(organizationId)) {
+//            checkResourcesAvailability(organizationId,
+//                                       getDistributionOrganization(organizationId),
+//                                       getDistributedResources(organizationId),
+//                                       resources);
 
-            organizationDistributedResourcesDao.store(new OrganizationDistributedResourcesImpl(suborganizationId, resources));
+            organizationResourcesDao.store(new OrganizationResourcesImpl(organizationResources));
         }
     }
 
@@ -127,9 +131,9 @@ public class OrganizationResourcesDistributor {
      * @throws ServerException
      *         when any other error occurs
      */
-    public OrganizationDistributedResources get(String suborganizationId) throws NotFoundException, ServerException {
+    public OrganizationResources get(String suborganizationId) throws NotFoundException, ServerException {
         requireNonNull(suborganizationId, "Required non-null suborganization id");
-        return organizationDistributedResourcesDao.get(suborganizationId);
+        return organizationResourcesDao.get(suborganizationId);
     }
 
     /**
@@ -143,12 +147,12 @@ public class OrganizationResourcesDistributor {
      * @throws ServerException
      *         when any other error occurs
      */
-    public Page<? extends OrganizationDistributedResources> getByParent(String organizationId,
-                                                                        int maxItems,
-                                                                        long skipCount) throws ServerException {
+    public Page<? extends OrganizationResources> getByParent(String organizationId,
+                                                             int maxItems,
+                                                             long skipCount) throws ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
 
-        return organizationDistributedResourcesDao.getByParent(organizationId, maxItems, skipCount);
+        return organizationResourcesDao.getByParent(organizationId, maxItems, skipCount);
     }
 
     /**
@@ -178,11 +182,11 @@ public class OrganizationResourcesDistributor {
         requireNonNull(organizationId, "Required non-null organization id");
 
         try (@SuppressWarnings("unused") Unlocker u = resourcesLocks.acquiresLock(organizationId)) {
-            checkResourcesAvailability(organizationId,
-                                       getDistributionOrganization(organizationId),
-                                       getDistributedResources(organizationId),
-                                       emptyList());
-            organizationDistributedResourcesDao.remove(organizationId);
+//            checkResourcesAvailability(organizationId,
+//                                       getDistributionOrganization(organizationId),
+//                                       getDistributedResources(organizationId),
+//                                       emptyList());
+            organizationResourcesDao.remove(organizationId);
         }
     }
 
@@ -285,7 +289,7 @@ public class OrganizationResourcesDistributor {
      */
     private List<? extends Resource> getDistributedResources(String organizationId) throws ServerException {
         try {
-            return organizationDistributedResourcesDao.get(organizationId).getResources();
+            return organizationResourcesDao.get(organizationId).getResourcesCap();
         } catch (NotFoundException ignored) {
             return emptyList();
         }
