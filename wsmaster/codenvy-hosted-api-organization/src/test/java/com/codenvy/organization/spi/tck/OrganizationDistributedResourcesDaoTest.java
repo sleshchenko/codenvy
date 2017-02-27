@@ -71,8 +71,8 @@ public class OrganizationDistributedResourcesDaoTest {
             suborganizations[i] = new OrganizationImpl("suborgId-" + i, "suborgName" + i, parentOrganization.getId());
             distributedResources[i] = new OrganizationDistributedResourcesImpl(suborganizations[i].getId(),
                                                                                singletonList(new ResourceImpl(TEST_RESOURCE_TYPE,
-                                                                                                              i,
-                                                                                                              "test")));
+                                                                                                   i,
+                                                                                                   "test")));
         }
         organizationsRepository.createAll(Collections.singletonList(parentOrganization));
         organizationsRepository.createAll(Arrays.asList(suborganizations));
@@ -102,10 +102,9 @@ public class OrganizationDistributedResourcesDaoTest {
     public void shouldUpdateDistributedResourcesWhenStoringExistentOne() throws Exception {
         //given
         OrganizationDistributedResourcesImpl toStore = new OrganizationDistributedResourcesImpl(distributedResources[0].getOrganizationId(),
-                                                                                                singletonList(
-                                                                                                        new ResourceImpl(TEST_RESOURCE_TYPE,
-                                                                                                                         1000,
-                                                                                                                         "unit")));
+                                                                                                singletonList(new ResourceImpl(TEST_RESOURCE_TYPE,
+                                                                                                         1000,
+                                                                                                         "unit")));
 
         //when
         distributedResourcesDao.store(toStore);
