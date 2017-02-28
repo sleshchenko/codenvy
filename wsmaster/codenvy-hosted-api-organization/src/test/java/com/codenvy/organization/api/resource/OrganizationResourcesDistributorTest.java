@@ -15,8 +15,6 @@
 package com.codenvy.organization.api.resource;
 
 import com.codenvy.organization.api.OrganizationManager;
-import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
-import com.codenvy.organization.shared.model.OrganizationDistributedResources;
 import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
 import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
@@ -29,8 +27,6 @@ import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
-import org.eclipse.che.api.core.Page;
-import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.commons.lang.concurrent.Unlocker;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -40,22 +36,19 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
@@ -84,25 +77,15 @@ public class OrganizationResourcesDistributorTest {
 
     @Spy
     @InjectMocks
-    private OrganizationResourcesDistributor distributor;
+    private OrganizationResourcesDistributor manager;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        doNothing().when(distributor).checkResourcesAvailability(anyString(), anyString(), any(), any());
+        doNothing().when(manager).checkResourcesAvailability(anyString(), any(), any());
         when(resourcesLocks.lock(anyString())).thenReturn(lock);
 
         when(organizationManager.getById(ORG_ID)).thenReturn(new OrganizationImpl(ORG_ID, ORG_ID + "name", PARENT_ORG_ID));
         when(organizationManager.getById(PARENT_ORG_ID)).thenReturn(new OrganizationImpl(PARENT_ORG_ID, PARENT_ORG_ID + "name", null));
-    }
-
-    @Test
-    public void shouldSubscribeListener() {
-        EventService eventService = mock(EventService.class);
-
-        distributor.subscribe(eventService);
-
-        verify(eventService).subscribe(any(OrganizationResourcesDistributor.RemoveOrganizationDistributedResourcesSubscriber.class),
-                                       eq(BeforeOrganizationRemovedEvent.class));
     }
 
     @Test
@@ -112,14 +95,15 @@ public class OrganizationResourcesDistributorTest {
         List<ResourceImpl> toDistribute = singletonList(createTestResource(1000));
 
         //when
-        distributor.distribute(ORG_ID, toDistribute);
+        //TODO FIx
+        manager.cap(ORG_ID, toDistribute);
 
         //then
         verify(distributedResourcesDao).get(ORG_ID);
-        verify(distributor).checkResourcesAvailability(ORG_ID,
-                                                       PARENT_ORG_ID,
-                                                       emptyList(),
-                                                       toDistribute);
+        verify(manager).checkResourcesAvailability(ORG_ID,
+
+                                                   emptyList(),
+                                                   toDistribute);
         verify(distributedResourcesDao).store(new OrganizationDistributedResourcesImpl(ORG_ID,
                                                                                        toDistribute));
         verify(resourcesLocks).lock(ORG_ID);
@@ -134,14 +118,14 @@ public class OrganizationResourcesDistributorTest {
         List<ResourceImpl> toDistribute = singletonList(createTestResource(1000));
 
         //when
-        distributor.distribute(ORG_ID, toDistribute);
+        manager.cap(ORG_ID, toDistribute);
 
         //then
         verify(distributedResourcesDao).get(ORG_ID);
-        verify(distributor).checkResourcesAvailability(ORG_ID,
-                                                       PARENT_ORG_ID,
-                                                       distributedResources.getResources(),
-                                                       toDistribute);
+        verify(manager).checkResourcesAvailability(ORG_ID,
+
+                                                   distributedResources.getResourcesCap(),
+                                                   toDistribute);
         verify(distributedResourcesDao).store(new OrganizationDistributedResourcesImpl(ORG_ID,
                                                                                        toDistribute));
         verify(resourcesLocks).lock(ORG_ID);
@@ -149,7 +133,7 @@ public class OrganizationResourcesDistributorTest {
     }
 
     @Test(expectedExceptions = ConflictException.class,
-          expectedExceptionsMessageRegExp = "It is not allowed to distribute resources for root organization.")
+          expectedExceptionsMessageRegExp = "It is not allowed to capResources resources for root organization.")
     public void shouldThrowConflictExceptionOnDistributingResourcesForRootOrganization() throws Exception {
         //given
         final OrganizationDistributedResourcesImpl distributedResources = createDistributedResources(500);
@@ -157,19 +141,20 @@ public class OrganizationResourcesDistributorTest {
         List<ResourceImpl> toDistribute = singletonList(createTestResource(1000));
 
         //when
-        distributor.distribute(PARENT_ORG_ID, toDistribute);
+        //TODO Fix
+//        manager.capResources(PARENT_ORG_ID, toDistribute);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void shouldThrowNpeOnDistributionResourcesWithNullOrganizationId() throws Exception {
         //when
-        distributor.distribute(null, Collections.emptyList());
+        manager.cap(null, emptyList());
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void shouldThrowNpeOnDistributionNullResourcesList() throws Exception {
         //when
-        distributor.distribute(ORG_ID, null);
+        manager.cap(null, emptyList());
     }
 
     @Test
@@ -179,159 +164,128 @@ public class OrganizationResourcesDistributorTest {
         when(distributedResourcesDao.get(anyString())).thenReturn(distributedResources);
 
         //when
-        final List<? extends Resource> fetchedDistributedResources = distributor.get(ORG_ID);
+        final List<? extends Resource> fetchedDistributedResources = manager.getResourcesCaps(ORG_ID);
 
         //then
-        assertEquals(fetchedDistributedResources, distributedResources.getResources());
+        assertEquals(fetchedDistributedResources, distributedResources.getResourcesCap());
         verify(distributedResourcesDao).get(ORG_ID);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void shouldThrowNpeOnGettingDistributedResourcesByNullOrganizationId() throws Exception {
         //when
-        distributor.get(null);
-    }
-
-    @Test
-    public void shouldGetDistributedResourcesByParentOrganizationId() throws Exception {
-        //given
-        final Page<OrganizationDistributedResourcesImpl> existedPage = new Page<>(singletonList(createDistributedResources(1000)), 2, 1, 4);
-        when(distributedResourcesDao.getByParent(anyString(), anyInt(), anyLong())).thenReturn(existedPage);
-
-        //when
-        final Page<? extends OrganizationDistributedResources> fetchedPage = distributor.getByParent(PARENT_ORG_ID, 1, 2);
-
-        //then
-        assertEquals(fetchedPage, existedPage);
-        verify(distributedResourcesDao).getByParent(PARENT_ORG_ID, 1, 2L);
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void shouldThrowNpeOnGettingDistributedResourcesByNullParentOrganizationId() throws Exception {
-        //when
-        distributor.getByParent(null, 1, 1);
-    }
-
-    @Test
-    public void shouldResetDistributedResources() throws Exception {
-        //given
-        final OrganizationDistributedResourcesImpl distributedResources = createDistributedResources(500);
-        when(distributedResourcesDao.get(anyString())).thenReturn(distributedResources);
-
-        //when
-        distributor.reset(ORG_ID);
-
-        //then
-        verify(distributedResourcesDao).get(ORG_ID);
-        verify(distributor).checkResourcesAvailability(ORG_ID,
-                                                       PARENT_ORG_ID,
-                                                       distributedResources.getResources(),
-                                                       emptyList());
-        verify(distributedResourcesDao).remove(ORG_ID);
-        verify(resourcesLocks).lock(ORG_ID);
-        verify(lock).close();
-    }
-
-    @Test(expectedExceptions = ConflictException.class,
-          expectedExceptionsMessageRegExp = "It is not allowed to distribute resources for root organization.")
-    public void shouldThrowConflictExceptionOnResettingDistributedResourcesForRootOrganization() throws Exception {
-        //when
-        distributor.reset(PARENT_ORG_ID);
-    }
-
-    @Test
-    public void shouldNotThrowNotFoundExceptionOnDistributedResourcesResettingWhenThereAreAlreadyReset() throws Exception {
-        //given
-        when(distributedResourcesDao.get(anyString())).thenThrow(new NotFoundException("no distributed resources"));
-
-        //when
-        distributor.reset(ORG_ID);
-
-        //then
-        verify(distributedResourcesDao).get(ORG_ID);
-        verify(distributor).checkResourcesAvailability(ORG_ID,
-                                                       PARENT_ORG_ID,
-                                                       emptyList(),
-                                                       emptyList());
-        verify(distributedResourcesDao).remove(ORG_ID);
-        verify(resourcesLocks).lock(ORG_ID);
-        verify(lock).close();
-    }
-
-    @Test(expectedExceptions = NullPointerException.class)
-    public void shouldThrowNpeOnResettingDistributedResourcesByNullOrganizationId() throws Exception {
-        //when
-        distributor.reset(null);
-    }
-
-    @Test
-    public void shouldCheckTestResourceDifferenceAvailabilityOnParenOrganizationLevelOnAmountIncreasing() throws Exception {
-        //given
-        doCallRealMethod().when(distributor).checkResourcesAvailability(anyString(), anyString(), any(), any());
-        ResourceImpl distributed = createTestResource(700);
-        ResourceImpl toDistribute = createTestResource(1000);
-        doThrow(new NoEnoughResourcesException(distributed, toDistribute, createTestResource(300)))
-                .when(resourceAggregator).deduct((Resource)any(), any());
-
-        //when
-        distributor.checkResourcesAvailability(ORG_ID,
-                                               PARENT_ORG_ID,
-                                               singletonList(distributed),
-                                               singletonList(toDistribute));
-
-        //then
-        verify(usageManager).checkResourcesAvailability(PARENT_ORG_ID, singletonList(createTestResource(300)));
+        manager.getResourcesCaps(null);
     }
 
     @Test
     public void shouldCheckTestResourceDifferenceAvailabilityOnSuborganizationLevelOnAmountDecreasing() throws Exception {
         //given
-        doCallRealMethod().when(distributor).checkResourcesAvailability(anyString(), anyString(), any(), any());
-        ResourceImpl distributed = createTestResource(1000);
-        ResourceImpl toDistribute = createTestResource(700);
+        doCallRealMethod().when(manager).checkResourcesAvailability(anyString(), any(), any());
+        ResourceImpl used = createTestResource(500);
+        doReturn(singletonList(used))
+                .when(usageManager).getUsedResources(any());
+        ResourceImpl caped = createTestResource(1000);
+        ResourceImpl toCap = createTestResource(700);
         doReturn(createTestResource(300))
+                .doReturn(createTestResource(500))
                 .when(resourceAggregator).deduct((Resource)any(), any());
 
         //when
-        distributor.checkResourcesAvailability(ORG_ID,
-                                               PARENT_ORG_ID,
-                                               singletonList(distributed),
-                                               singletonList(toDistribute));
+        manager.checkResourcesAvailability(ORG_ID,
+                                           singletonList(caped),
+                                           singletonList(toCap));
 
         //then
-        verify(usageManager).checkResourcesAvailability(ORG_ID, singletonList(createTestResource(300)));
+        verify(usageManager).getUsedResources(ORG_ID);
+        verify(resourceAggregator).deduct(caped, toCap);
+        verify(resourceAggregator).deduct(toCap, used);
     }
 
     @Test
-    public void shouldCheckTestResourceAvailabilityOnParentOrganizationLevelOnInitialDistribution() throws Exception {
+    //TODO Fix name
+    public void shouldNotCheckTestResourceDifferenceAvailabilityOnSuborganizationLevelOnAmountDecreasing() throws Exception {
         //given
-        doCallRealMethod().when(distributor).checkResourcesAvailability(anyString(), anyString(), any(), any());
-        ResourceImpl toDistribute = createTestResource(700);
+        doCallRealMethod().when(manager).checkResourcesAvailability(anyString(), any(), any());
+        doReturn(emptyList())
+                .when(usageManager).getUsedResources(any());
+        ResourceImpl caped = createTestResource(1000);
+        ResourceImpl toCap = createTestResource(700);
+        doReturn(createTestResource(300))
+                .doReturn(createTestResource(500))
+                .when(resourceAggregator).deduct((Resource)any(), any());
 
         //when
-        distributor.checkResourcesAvailability(ORG_ID,
-                                               PARENT_ORG_ID,
-                                               emptyList(),
-                                               singletonList(toDistribute));
+        manager.checkResourcesAvailability(ORG_ID,
+                                           singletonList(caped),
+                                           singletonList(toCap));
 
         //then
-        verify(usageManager).checkResourcesAvailability(PARENT_ORG_ID, singletonList(toDistribute));
+        verify(usageManager).getUsedResources(ORG_ID);
+        verify(resourceAggregator).deduct(caped, toCap);
+        verifyNoMoreInteractions(resourceAggregator);
+    }
+
+    @Test(expectedExceptionsMessageRegExp = "Resources are currently in use. You can't decrease them, while they are used. " +
+                                            "Free resources, by stopping workspaces, before changing the resources caps.")
+    //TODO Fix name
+    public void shouldCheckTestResourceDifferenceAvailabilityOnSuborganizationLevelOnAmountDecreasingBlabla() throws Exception {
+        //given
+        doCallRealMethod().when(manager).checkResourcesAvailability(anyString(), any(), any());
+        ResourceImpl used = createTestResource(1000);
+        doReturn(singletonList(used))
+                .when(usageManager).getUsedResources(any());
+        ResourceImpl caped = createTestResource(1000);
+        ResourceImpl toCap = createTestResource(700);
+        doReturn(createTestResource(300))
+                .doThrow(new NoEnoughResourcesException(emptyList(), emptyList(), emptyList()))
+                .when(resourceAggregator).deduct((Resource)any(), any());
+
+        //when
+        manager.checkResourcesAvailability(ORG_ID,
+                                           singletonList(caped),
+                                           singletonList(toCap));
+
+        //then
+        verify(usageManager).getUsedResources(ORG_ID);
+        verify(resourceAggregator).deduct(caped, toCap);
+        verify(resourceAggregator).deduct(toCap, used);
     }
 
     @Test
-    public void shouldCheckTestResourceAvailabilityOnParentOrganizationLevelOnTestResourceDistributionResetting() throws Exception {
+    public void shouldNotCheckTestResourceAvailabilityOnCapIncreasing() throws Exception {
         //given
-        doCallRealMethod().when(distributor).checkResourcesAvailability(anyString(), anyString(), any(), any());
-        ResourceImpl distributed = createTestResource(700);
+        doCallRealMethod().when(manager).checkResourcesAvailability(anyString(), any(), any());
+        ResourceImpl caped = createTestResource(700);
+        ResourceImpl toCap = createTestResource(1000);
+        doThrow(new NoEnoughResourcesException(emptyList(), emptyList(), emptyList()))
+                .when(resourceAggregator).deduct((Resource)any(), any());
 
         //when
-        distributor.checkResourcesAvailability(ORG_ID,
-                                               PARENT_ORG_ID,
-                                               singletonList(distributed),
-                                               emptyList());
+        manager.checkResourcesAvailability(ORG_ID,
+                                           singletonList(caped),
+                                           singletonList(toCap));
 
         //then
-        verify(usageManager).checkResourcesAvailability(ORG_ID, singletonList(distributed));
+        verify(usageManager, never()).getUsedResources(ORG_ID);
+    }
+
+    @Test
+    public void shouldCheckTestResourceOnSuborganizationLevelOnCapInitializing() throws Exception {
+        //given
+        doCallRealMethod().when(manager).checkResourcesAvailability(anyString(), any(), any());
+        ResourceImpl toCap = createTestResource(1000);
+        ResourceImpl used = createTestResource(500);
+        doReturn(singletonList(used))
+                .when(usageManager).getUsedResources(any());
+
+        //when
+        manager.checkResourcesAvailability(ORG_ID,
+                                           emptyList(),
+                                           singletonList(toCap));
+
+        //then
+        verify(usageManager).getUsedResources(ORG_ID);
+        verify(resourceAggregator).deduct(toCap, used);
     }
 
     private ResourceImpl createTestResource(long amount) {

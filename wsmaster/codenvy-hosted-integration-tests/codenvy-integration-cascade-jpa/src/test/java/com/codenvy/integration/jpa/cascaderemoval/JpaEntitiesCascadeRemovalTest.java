@@ -127,6 +127,7 @@ import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.crea
 import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.createWorkspace;
 import static com.codenvy.resource.spi.jpa.JpaFreeResourcesLimitDao.RemoveFreeResourcesLimitSubscriber;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.eclipse.che.commons.test.db.H2TestHelper.inMemoryDefault;
 import static org.mockito.Mockito.when;
@@ -352,7 +353,7 @@ public class JpaEntitiesCascadeRemovalTest {
         assertNull(notFoundToNull(() -> freeResourcesLimitDao.get(user2.getId())));
 
         // distributed resources is removed
-        assertTrue(organizationResourcesDistributor.get(childOrganization.getId()).isEmpty());
+        assertTrue(organizationResourcesDistributor.getResourcesCaps(childOrganization.getId()).isEmpty());
 
         //cleanup
         stackDao.remove(stack3.getId());
@@ -387,7 +388,7 @@ public class JpaEntitiesCascadeRemovalTest {
         assertNotNull(notFoundToNull(() -> organizationManager.getById(organization.getId())));
         assertNotNull(notFoundToNull(() -> organizationManager.getById(childOrganization.getId())));
         assertNotNull(notFoundToNull(() -> organizationManager.getById(organization2.getId())));
-        assertNotNull(notFoundToNull(() -> organizationResourcesDistributor.get(childOrganization.getId())));
+        assertTrue(organizationResourcesDistributor.getResourcesCaps(childOrganization.getId()).isEmpty());
         wipeTestData();
     }
 
@@ -464,17 +465,18 @@ public class JpaEntitiesCascadeRemovalTest {
         freeResourcesLimitDao.store(freeResourcesLimit = createFreeResourcesLimit(user.getId()));
         freeResourcesLimitDao.store(freeResourcesLimit2 = createFreeResourcesLimit(user2.getId()));
 
-        organizationResourcesDistributor.distribute(childOrganization.getId(), singletonList(new ResourceImpl(RamResourceType.ID,
-                                                                                                              1024,
-                                                                                                              RamResourceType.UNIT)));
+        organizationResourcesDistributor.cap(childOrganization.getId(),
+                                             singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                            1024,
+                                                                            RamResourceType.UNIT)));
     }
 
     private void prepareCreator(String userId) {
         EnvironmentContext.getCurrent().setSubject(new SubjectImpl("userok", userId, "", false));
     }
 
-    private void wipeTestData() throws NotFoundException, ConflictException, ServerException {
-        organizationResourcesDistributor.reset(childOrganization.getId());
+    private void wipeTestData() throws ConflictException, ServerException, NotFoundException {
+        organizationResourcesDistributor.cap(childOrganization.getId(), emptyList());
 
         freeResourcesLimitDao.remove(freeResourcesLimit.getAccountId());
         freeResourcesLimitDao.remove(freeResourcesLimit2.getAccountId());

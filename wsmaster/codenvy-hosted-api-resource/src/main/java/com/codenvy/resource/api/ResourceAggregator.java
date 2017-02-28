@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Helps aggregate resources by theirs type.
@@ -43,6 +44,22 @@ public class ResourceAggregator {
     public ResourceAggregator(Set<ResourceType> resourcesTypes) {
         this.resourcesTypes = resourcesTypes.stream()
                                             .collect(Collectors.toMap(ResourceType::getId, Function.identity()));
+    }
+
+    /**
+     * Aggregates resources of the same type.
+     *
+     * @param resourcesA
+     *         resources list which can contain more that one instance for some type
+     * @param resourcesB
+     *         resources list which can contain more that one instance for some type
+     * @return map where key is resources type and value is aggregated resource
+     * @throws IllegalStateException
+     *         when resources list contains resource with not supported type
+     */
+    public Map<String, Resource> aggregateByType(List<? extends Resource> resourcesA, List<? extends Resource> resourcesB) {
+        return aggregateByType(Stream.concat(resourcesA.stream(), resourcesB.stream())
+                                     .collect(Collectors.toList()));
     }
 
     /**

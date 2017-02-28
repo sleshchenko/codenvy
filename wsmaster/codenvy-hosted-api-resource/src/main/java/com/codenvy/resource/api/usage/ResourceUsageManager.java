@@ -140,9 +140,7 @@ public class ResourceUsageManager {
         List<Resource> usedResources = new ArrayList<>();
         for (ResourceUsageTracker usageTracker : usageTrackers) {
             Optional<Resource> usedResource = usageTracker.getUsedResource(accountId);
-            if (usedResource.isPresent()) {
-                usedResources.add(usedResource.get());
-            }
+            usedResource.ifPresent(usedResources::add);
         }
         return usedResources;
     }

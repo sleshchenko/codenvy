@@ -131,7 +131,7 @@ public class SuborganizationResourcesProviderTest {
         OrganizationDistributedResourcesImpl distributedResources = new OrganizationDistributedResourcesImpl("organization123",
                                                                                                              asList(testResource,
                                                                                                                     timeoutResource));
-        doReturn(distributedResources.getResources()).when(resourcesDistributor).get(any());
+        doReturn(distributedResources.getResourcesCap()).when(resourcesDistributor).getResourcesCaps(any());
 
         //when
         final List<ProvidedResources> providedResources = suborganizationResourcesProvider.getResources("organization123");
@@ -146,7 +146,7 @@ public class SuborganizationResourcesProviderTest {
                                                                          asList(testResource, timeoutResource)));
         verify(accountManager).getById("organization123");
         verify(organizationManager).getById("organization123");
-        verify(resourcesDistributor).get("organization123");
+        verify(resourcesDistributor).getResourcesCaps("organization123");
         verify(resourceUsageManager, never()).getAvailableResources("parentOrg");
     }
 
@@ -155,7 +155,7 @@ public class SuborganizationResourcesProviderTest {
         //given
         when(account.getType()).thenReturn(OrganizationImpl.ORGANIZATIONAL_ACCOUNT);
         when(organization.getParent()).thenReturn("parentOrg");
-        doReturn(emptyList()).when(resourcesDistributor).get(any());
+        doReturn(emptyList()).when(resourcesDistributor).getResourcesCaps(any());
         doReturn(emptyList()).when(resourceUsageManager).getAvailableResources(anyString());
 
         //when
@@ -165,7 +165,7 @@ public class SuborganizationResourcesProviderTest {
         assertTrue(providedResources.isEmpty());
         verify(accountManager).getById("organization123");
         verify(organizationManager).getById("organization123");
-        verify(resourcesDistributor).get("organization123");
+        verify(resourcesDistributor).getResourcesCaps("organization123");
         verify(resourceUsageManager).getAvailableResources("parentOrg");
     }
 
@@ -174,7 +174,7 @@ public class SuborganizationResourcesProviderTest {
         //given
         when(account.getType()).thenReturn(OrganizationImpl.ORGANIZATIONAL_ACCOUNT);
         when(organization.getParent()).thenReturn("parentOrg");
-        doReturn(emptyList()).when(resourcesDistributor).get(any());
+        doReturn(emptyList()).when(resourcesDistributor).getResourcesCaps(any());
         ResourceImpl parentTimeout = new ResourceImpl(TimeoutResourceType.ID,
                                                       10,
                                                       TimeoutResourceType.UNIT);
@@ -194,7 +194,7 @@ public class SuborganizationResourcesProviderTest {
                                                                          singletonList(parentTimeout)));
         verify(accountManager).getById("organization123");
         verify(organizationManager).getById("organization123");
-        verify(resourcesDistributor).get("organization123");
+        verify(resourcesDistributor).getResourcesCaps("organization123");
         verify(resourceUsageManager).getAvailableResources("parentOrg");
     }
 }
