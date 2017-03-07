@@ -12,17 +12,14 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.auth.sso.server;
+package com.codenvy.auth.sso.bearer.server;
 
 import com.codenvy.api.dao.authentication.CookieBuilder;
 import com.codenvy.api.license.server.SystemLicenseManager;
 import com.codenvy.api.license.shared.model.Constants;
-import com.codenvy.auth.sso.server.BearerTokenAuthenticationService.ValidationData;
-import com.codenvy.auth.sso.server.handler.BearerTokenAuthenticationHandler;
+import com.codenvy.auth.sso.bearer.shared.dto.RegistrationDataDto;
 import com.codenvy.auth.sso.server.organization.UserCreationValidator;
 import com.codenvy.auth.sso.server.organization.UserCreator;
-import com.codenvy.mail.MailSender;
-import com.codenvy.mail.EmailBean;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.response.Response;
 
@@ -30,7 +27,6 @@ import org.eclipse.che.api.core.rest.ApiExceptionMapper;
 import org.eclipse.che.api.core.rest.shared.dto.ServiceError;
 import org.eclipse.che.dto.server.DtoFactory;
 import org.everrest.assured.EverrestJetty;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
@@ -38,13 +34,10 @@ import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import static com.jayway.restassured.RestAssured.given;
-import static javax.ws.rs.core.MediaType.TEXT_HTML;
 import static org.eclipse.che.dto.server.DtoFactory.newDto;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 /**
  * Test for {@link BearerTokenAuthenticationService}
@@ -54,54 +47,32 @@ import static org.testng.Assert.assertTrue;
 @Listeners(value = {EverrestJetty.class, MockitoTestNGListener.class})
 public class BearerTokenAuthenticationServiceTest {
 
+    @SuppressWarnings("unused")
+    private static ApiExceptionMapper    apiExceptionMapper;
     @Mock
-    private BearerTokenAuthenticationHandler handler;
+    private        VerifyEmailMailSender mailSender;
     @Mock
-    private MailSender                       mailSender;
+    private        CookieBuilder         cookieBuilder;
     @Mock
-    private InputDataValidator               inputDataValidator;
+    private        UserCreationValidator creationValidator;
     @Mock
-    private CookieBuilder                    cookieBuilder;
+    private        UserCreator           userCreator;
+
     @Mock
-    private UserCreationValidator            creationValidator;
-    @Mock
-    private UserCreator                      userCreator;
-    @Mock
-    private SystemLicenseManager             licenseManager;
+    private SystemLicenseManager licenseManager;
 
     @InjectMocks
     private BearerTokenAuthenticationService bearerTokenAuthenticationService;
 
-    @SuppressWarnings("unused")
-    private ApiExceptionMapper apiExceptionMapper;
-
-    @Test
-    public void shouldSendEmailToValidateUserEmailAndUserName() throws Exception {
-        bearerTokenAuthenticationService.mailFrom = "noreply@host";
-        ArgumentCaptor<EmailBean> argumentCaptor = ArgumentCaptor.forClass(EmailBean.class);
-        ValidationData validationData = new ValidationData("Email", "UserName");
-        when(licenseManager.isFairSourceLicenseAccepted()).thenReturn(true);
-        when(licenseManager.canUserBeAdded()).thenReturn(true);
-
-        Response post = given().contentType(ContentType.JSON).content(validationData).post("/internal/token/validate");
-
-        verify(mailSender).sendMail(argumentCaptor.capture());
-        EmailBean argumentCaptorValue = argumentCaptor.getValue();
-        assertTrue(argumentCaptorValue.getAttachments().size() == 1);
-        assertTrue(!argumentCaptorValue.getBody().isEmpty());
-        assertEquals(argumentCaptorValue.getMimeType(), TEXT_HTML);
-        assertEquals(argumentCaptorValue.getFrom(), "noreply@host");
-        assertEquals(argumentCaptorValue.getSubject(), "Verify Your Codenvy Account");
-    }
-
     @Test
     public void shouldThrowAnExceptionWhenUserBeyondTheLicense() throws Exception {
-        bearerTokenAuthenticationService.mailFrom = "noreply@host";
-        ValidationData validationData = new ValidationData("Email", "UserName");
+        RegistrationDataDto registrationDataDto = DtoFactory.newDto(RegistrationDataDto.class)
+                                                            .withEmail("Email")
+                                                            .withUsername("UserName");
         when(licenseManager.isFairSourceLicenseAccepted()).thenReturn(true);
         when(licenseManager.canUserBeAdded()).thenReturn(false);
 
-        Response response = given().contentType(ContentType.JSON).content(validationData).post("/internal/token/validate");
+        Response response = given().contentType(ContentType.JSON).content(registrationDataDto).post("/internal/token/validate");
 
         assertEquals(response.getStatusCode(), 403);
         assertEquals(DtoFactory.getInstance().createDtoFromJson(response.asString(), ServiceError.class),
@@ -111,11 +82,12 @@ public class BearerTokenAuthenticationServiceTest {
 
     @Test
     public void shouldThrowAnExceptionWhenFairSourceLicenseIsNotAccepted() throws Exception {
-        bearerTokenAuthenticationService.mailFrom = "noreply@host";
-        ValidationData validationData = new ValidationData("Email", "UserName");
+        RegistrationDataDto registrationDataDto = DtoFactory.newDto(RegistrationDataDto.class)
+                                                            .withEmail("Email")
+                                                            .withUsername("UserName");
         when(licenseManager.isFairSourceLicenseAccepted()).thenReturn(false);
 
-        Response response = given().contentType(ContentType.JSON).content(validationData).post("/internal/token/validate");
+        Response response = given().contentType(ContentType.JSON).content(registrationDataDto).post("/internal/token/validate");
 
         assertEquals(response.getStatusCode(), 403);
         assertEquals(DtoFactory.getInstance().createDtoFromJson(response.asString(), ServiceError.class),

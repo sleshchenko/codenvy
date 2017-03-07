@@ -12,15 +12,18 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.api.dao.exception;
+package com.codenvy.auth.sso.bearer.shared.dto;
+
+import org.eclipse.che.dto.shared.DTO;
 
 /**
- *
+ * @author Sergii Leschenko
  */
-public class ItemNamingException extends Exception {
+@DTO
+public interface CredentialsDto {
+    String getToken();
 
+    void setToken(String token);
 
-    public ItemNamingException(String message) {
-        super(message);
-    }
+    CredentialsDto withToken(String token);
 }

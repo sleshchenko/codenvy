@@ -14,8 +14,8 @@
  */
 package com.codenvy.auth.sso.oauth;
 
-import com.codenvy.auth.sso.server.InputDataValidator;
-import com.codenvy.auth.sso.server.handler.BearerTokenAuthenticationHandler;
+import com.codenvy.auth.sso.bearer.server.EmailValidator;
+import com.codenvy.auth.sso.bearer.server.BearerTokens;
 import com.codenvy.mail.MailSender;
 
 import org.eclipse.che.api.auth.shared.dto.OAuthToken;
@@ -61,11 +61,11 @@ public class CreateUserWithCapturedProfileInfoTest {
     @Mock
     private OAuthAuthenticatorProvider                 authenticatorProvider;
     @Mock
-    private BearerTokenAuthenticationHandler           handler;
+    private BearerTokens                               handler;
     @Mock
     private org.eclipse.che.security.oauth.shared.User googleUser;
     @Mock
-    private InputDataValidator                         inputDataValidator;
+    private EmailValidator                             emailValidator;
 
     @InjectMocks
     private OAuthLoginServlet oAuthLoginServlet;

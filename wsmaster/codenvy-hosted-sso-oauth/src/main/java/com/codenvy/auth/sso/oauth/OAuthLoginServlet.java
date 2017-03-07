@@ -14,13 +14,14 @@
  */
 package com.codenvy.auth.sso.oauth;
 
-import com.codenvy.auth.sso.server.InputDataValidator;
-import com.codenvy.auth.sso.server.handler.BearerTokenAuthenticationHandler;
+import com.codenvy.auth.sso.bearer.server.BearerTokens;
+import com.codenvy.auth.sso.bearer.server.EmailValidator;
 
-import org.eclipse.che.api.auth.AuthenticationException;
+import org.apache.http.HttpStatus;
 import org.eclipse.che.api.auth.shared.dto.OAuthToken;
 import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.BadRequestException;
+import org.eclipse.che.api.core.ForbiddenException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.model.user.User;
@@ -54,22 +55,22 @@ import static com.google.common.base.Strings.isNullOrEmpty;
 public class OAuthLoginServlet extends HttpServlet {
     private static final Logger LOG = LoggerFactory.getLogger(OAuthLoginServlet.class);
     @Inject
-    private UserManager                      userManager;
+    private UserManager                userManager;
     @Inject
-    private OAuthAuthenticatorProvider       authenticatorProvider;
+    private OAuthAuthenticatorProvider authenticatorProvider;
     @Inject
-    private BearerTokenAuthenticationHandler handler;
+    private BearerTokens               bearerTokens;
     @Inject
-    private InputDataValidator               inputDataValidator;
+    private EmailValidator             emailValidator;
     @Named("auth.sso.create_workspace_page_url")
     @Inject
-    private String                           createWorkspacePage;
+    private String                     createWorkspacePage;
     @Named("auth.no.account.found.page")
     @Inject
-    private String                           noAccountFoundErrorPage;
+    private String                     noAccountFoundErrorPage;
     @Inject
     @Named("che.auth.user_self_creation")
-    private boolean                          userSelfCreationAllowed;
+    private boolean                    userSelfCreationAllowed;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -90,9 +91,9 @@ public class OAuthLoginServlet extends HttpServlet {
 
 
         try {
-            handler.authenticate(bearertoken);
-        } catch (AuthenticationException e) {
-            resp.sendError(e.getResponseStatus(), e.getLocalizedMessage());
+            bearerTokens.validate(bearertoken);
+        } catch (ForbiddenException e) {
+            resp.sendError(HttpStatus.SC_FORBIDDEN, e.getLocalizedMessage());
             return;
         }
 
@@ -126,13 +127,13 @@ public class OAuthLoginServlet extends HttpServlet {
                                 .replaceQueryParam("signature")
                                 .replaceQueryParam("oauth_provider")
                                 .replaceQueryParam("oauthbearertoken")
-                                .queryParam("bearertoken", handler.generateBearerToken(email,
-                                                                                       userOptional.get().getName(),
-                                                                                       Collections
-                                                                                               .singletonMap(
-                                                                                                       "initiator",
-                                                                                                       oauthProvider)
-                                                                                      ))
+                                .queryParam("bearertoken", bearerTokens.generate(email,
+                                                                                 userOptional.get().getName(),
+                                                                                 Collections
+                                                                                         .singletonMap(
+                                                                                                 "initiator",
+                                                                                                 oauthProvider)
+                                ))
                                 .build();
 
             LOG.debug("Oauth login. Redirect after: {}", uri.toString());
@@ -148,14 +149,14 @@ public class OAuthLoginServlet extends HttpServlet {
             profileInfo.put("initiator", oauthProvider);
 
             try {
-                inputDataValidator.validateUserMail(email);
+                emailValidator.validateMail(email);
 
                 URI uri =
                         UriBuilder.fromUri(createWorkspacePage).replaceQuery(req.getQueryString())
                                   .replaceQueryParam("signature")
                                   .replaceQueryParam("oauth_provider")
                                   .replaceQueryParam("bearertoken",
-                                                     handler.generateBearerToken(email, findAvailableUsername(email), profileInfo)).build();
+                                                     bearerTokens.generate(email, findAvailableUsername(email), profileInfo)).build();
 
                 resp.sendRedirect(uri.toString());
             } catch (BadRequestException e) {

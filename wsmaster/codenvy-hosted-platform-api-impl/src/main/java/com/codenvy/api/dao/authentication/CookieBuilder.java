@@ -18,13 +18,11 @@ import javax.ws.rs.core.Response;
 
 /**
  * Utility class to helps build response after authentication.
- * <p/>
- * It allow to to set or remove such cookies:
- * <p/>
+ *
+ * <p>It allows to set or remove cookies with token.
  */
 public interface CookieBuilder {
+    void setCookies(Response.ResponseBuilder builder, String token, boolean secure);
 
-    public void clearCookies(Response.ResponseBuilder builder, String token, boolean secure);
-
-    public void setCookies(Response.ResponseBuilder builder, String token, boolean secure);
+    void clearCookies(Response.ResponseBuilder builder, boolean secure);
 }

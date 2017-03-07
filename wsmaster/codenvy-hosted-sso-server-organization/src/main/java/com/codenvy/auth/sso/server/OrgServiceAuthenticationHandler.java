@@ -33,7 +33,7 @@ public class OrgServiceAuthenticationHandler implements AuthenticationHandler {
     private static final Logger LOG = LoggerFactory.getLogger(OrgServiceAuthenticationHandler.class);
 
     @Inject
-    UserDao userDao;
+    private UserDao userDao;
 
     public String authenticate(final String login, final String password)
             throws AuthenticationException {

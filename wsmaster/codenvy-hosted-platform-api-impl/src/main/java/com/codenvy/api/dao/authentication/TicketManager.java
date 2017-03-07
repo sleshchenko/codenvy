@@ -18,7 +18,6 @@ import java.util.Set;
 
 /**
  * Manager to persist access tickets for SSO login process
- * <p/>
  *
  * @author Andrey Parfonov
  * @author Sergey Kabashniuk

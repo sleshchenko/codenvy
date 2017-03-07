@@ -12,26 +12,19 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.auth.sso.server;
+package com.codenvy.auth.sso.bearer.server;
 
-import com.codenvy.auth.sso.server.handler.BearerTokenAuthenticationHandler;
 import com.google.inject.AbstractModule;
-import com.google.inject.name.Names;
-
-import org.eclipse.che.inject.DynaModule;
 
 /**
- * Setup BearerTokenAuthenticationService  in guice container.
+ * Setup BearerTokenAuthenticationService in guice container.
  *
  * @author Sergii Kabashniuk
  */
-@DynaModule
 public class BearerSecurityModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(com.codenvy.auth.sso.server.BearerTokenAuthenticationService.class);
-        bind(BearerTokenAuthenticationHandler.class);
-        bind(com.codenvy.auth.sso.server.InputDataValidator.class);
-        bindConstant().annotatedWith(Names.named(InputDataValidator.EMAIL_BLACKLIST_FILE)).to("cloud-ide-user-mail-blacklist.txt");
+        bind(BearerTokenAuthenticationService.class);
+        bind(BearerTokens.class);
     }
 }

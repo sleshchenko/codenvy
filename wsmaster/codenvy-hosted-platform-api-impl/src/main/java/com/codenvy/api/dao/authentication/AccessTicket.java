@@ -14,7 +14,6 @@
  */
 package com.codenvy.api.dao.authentication;
 
-
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;

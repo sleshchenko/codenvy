@@ -12,27 +12,24 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.auth.sso.server.organization;
+package com.codenvy.auth.sso.bearer.shared.dto;
 
-import org.eclipse.che.api.core.model.user.User;
-
-import java.io.IOException;
+import org.eclipse.che.dto.shared.DTO;
 
 /**
- * Temporary bridge between authentication and organization.
- * In future have to be replaced with direct HTTP calls.
- *
- * @author Sergii Kabashniuk
+ * @author Sergii Leschenko
  */
-public interface UserCreator {
-    /**
-     * Create new persistent user.
-     *
-     * @param email
-     * @param userName
-     * @param firstName
-     * @param lastName
-     * @throws IOException
-     */
-    User createUser(String email, String userName, String firstName, String lastName) throws IOException;
+@DTO
+public interface RegistrationDataDto {
+    String getEmail();
+
+    void setEmail(String email);
+
+    RegistrationDataDto withEmail(String email);
+
+    String getUsername();
+
+    void setUsername(String username);
+
+    RegistrationDataDto withUsername(String username);
 }

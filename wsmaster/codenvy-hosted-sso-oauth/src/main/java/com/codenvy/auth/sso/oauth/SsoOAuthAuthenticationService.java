@@ -14,7 +14,7 @@
  */
 package com.codenvy.auth.sso.oauth;
 
-import com.codenvy.auth.sso.server.handler.BearerTokenAuthenticationHandler;
+import com.codenvy.auth.sso.bearer.server.BearerTokens;
 
 import org.eclipse.che.api.core.BadRequestException;
 import org.eclipse.che.security.oauth.OAuthAuthenticationException;
@@ -49,7 +49,7 @@ import static org.eclipse.che.commons.lang.UrlUtils.getState;
 @Path("oauth")
 public class SsoOAuthAuthenticationService extends OAuthAuthenticationService {
     @Inject
-    BearerTokenAuthenticationHandler authenticationHandler;
+    BearerTokens authenticationHandler;
 
     @GET
     @Path("callback")
@@ -81,7 +81,7 @@ public class SsoOAuthAuthenticationService extends OAuthAuthenticationService {
                     UriBuilder.fromUri(redirectAfterLogin)
                               .queryParam("email", userId)
                               .queryParam("oauth_provider", providerName)
-                              .queryParam("oauthbearertoken", authenticationHandler.generateBearerToken(userId, userId, payload))
+                              .queryParam("oauthbearertoken", authenticationHandler.generate(userId, userId, payload))
                               .build())
                            .build();
 

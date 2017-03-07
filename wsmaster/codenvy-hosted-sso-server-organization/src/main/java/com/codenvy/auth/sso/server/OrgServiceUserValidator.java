@@ -14,6 +14,7 @@
  */
 package com.codenvy.auth.sso.server;
 
+import com.codenvy.auth.sso.bearer.server.EmailValidator;
 import com.codenvy.auth.sso.server.organization.UserCreationValidator;
 import com.google.common.collect.Sets;
 
@@ -26,7 +27,6 @@ import org.eclipse.che.api.user.server.UserValidator;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-
 import java.util.Set;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -36,18 +36,21 @@ import static com.google.common.base.Strings.isNullOrEmpty;
  */
 public class OrgServiceUserValidator implements UserCreationValidator {
 
-    private final UserManager   userDao;
-    private final UserValidator userValidator;
-    private final boolean       userSelfCreationAllowed;
-    private final Set<String>   reservedNames;
+    private final UserManager    userDao;
+    private final UserValidator  userValidator;
+    private final EmailValidator emailValidator;
+    private final boolean        userSelfCreationAllowed;
+    private final Set<String>    reservedNames;
 
     @Inject
     public OrgServiceUserValidator(UserManager userDao,
                                    UserValidator userValidator,
+                                   EmailValidator emailValidator,
                                    @Named("che.auth.user_self_creation") boolean userSelfCreationAllowed,
                                    @Named("che.auth.reserved_user_names") String[] reservedNames) {
         this.userDao = userDao;
         this.userValidator = userValidator;
+        this.emailValidator = emailValidator;
         this.userSelfCreationAllowed = userSelfCreationAllowed;
         this.reservedNames = Sets.newHashSet(reservedNames);
     }
@@ -65,6 +68,8 @@ public class OrgServiceUserValidator implements UserCreationValidator {
         if (isNullOrEmpty(userName)) {
             throw new BadRequestException("User name cannot be empty or null");
         }
+
+        emailValidator.validateMail(email);
 
         if (!userValidator.isValidName(userName)) {
             throw new BadRequestException("User name must contain letters and digits only");

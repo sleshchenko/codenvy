@@ -34,7 +34,5 @@ public class SsoServerModule extends AbstractModule {
         bind(com.codenvy.auth.sso.server.ticket.AccessTicketInvalidator.class);
         bind(com.codenvy.auth.sso.server.ticket.LogoutOnUserRemoveSubscriber.class).asEagerSingleton();
         bind(org.eclipse.che.api.auth.AuthenticationExceptionMapper.class);
-
-
     }
 }

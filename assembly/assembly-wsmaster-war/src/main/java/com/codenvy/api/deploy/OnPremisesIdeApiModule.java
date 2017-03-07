@@ -265,7 +265,7 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         bind(AuditServicePermissionsFilter.class);
 
         //authentication
-
+        install(new com.codenvy.auth.sso.bearer.server.BearerSecurityModule());
         bind(TokenValidator.class).to(com.codenvy.auth.sso.server.BearerTokenValidator.class);
         bind(com.codenvy.auth.sso.oauth.SsoOAuthAuthenticationService.class);
 

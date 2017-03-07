@@ -13,9 +13,6 @@
  * from Codenvy S.A..
  */
 package com.codenvy.api.dao.authentication;
-/**
- * @author Sergii Kabashniuk
- */
 
 import javax.inject.Inject;
 import javax.inject.Named;

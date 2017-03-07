@@ -120,7 +120,7 @@ public class AuthenticationDaoImpl implements AuthenticationDao {
             } else {
                 //cookie is outdated, clearing
                 if (cookieBuilder != null) {
-                    cookieBuilder.clearCookies(builder, tokenAccessCookie.getValue(), secure);
+                    cookieBuilder.clearCookies(builder, secure);
                 }
 
             }
@@ -164,7 +164,7 @@ public class AuthenticationDaoImpl implements AuthenticationDao {
             LOG.warn("Token not found in request.");
         }
         if (cookieBuilder != null) {
-            cookieBuilder.clearCookies(response, accessToken, secure);
+            cookieBuilder.clearCookies(response, secure);
         }
         return response.build();
     }
