@@ -1,5 +1,11 @@
 # Change Log
 
+## [5.7.1](https://github.com/codenvy/codenvy/tree/5.7.1) (2017-04-08)
+[Full Changelog](https://github.com/codenvy/codenvy/compare/5.7.0...5.7.1)
+
+**Pull requests merged:**
+- fix situation when redirect_after_login contains hash [2062](https://github.com/codenvy/codenvy/pull/2062)
+
 ## [5.7.0](https://github.com/codenvy/codenvy/tree/5.7.0) (2017-04-06)
 [Full Changelog](https://github.com/codenvy/codenvy/compare/5.6.0...5.7.0)
 
