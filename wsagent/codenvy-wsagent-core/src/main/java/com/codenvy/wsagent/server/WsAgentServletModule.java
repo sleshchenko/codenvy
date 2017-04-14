@@ -12,10 +12,9 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.ext.java.server;
+package com.codenvy.wsagent.server;
 
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.servlet.ServletModule;
 
 import org.eclipse.che.api.core.cors.CheCorsFilter;
@@ -27,7 +26,7 @@ import org.eclipse.che.inject.DynaModule;
  * @author Alexander Garagatyi
  */
 @DynaModule
-public class MachineServletModule extends ServletModule {
+public class WsAgentServletModule extends ServletModule {
     @Override
     protected void configureServlets() {
         //listeners
@@ -43,10 +42,5 @@ public class MachineServletModule extends ServletModule {
         install(new com.codenvy.auth.sso.client.deploy.SsoClientServletModule());
         serveRegex("/[^/]+/api((?!(/(ws|eventbus)($|/.*)))/.*)").with(org.everrest.guice.servlet.GuiceEverrestServlet.class);
 
-        bind(io.swagger.jaxrs.config.DefaultJaxrsConfig.class).asEagerSingleton();
-        serve("/swaggerinit").with(io.swagger.jaxrs.config.DefaultJaxrsConfig.class, ImmutableMap
-                .of("api.version", "1.0",
-                    "swagger.api.title", "Eclipse Che",
-                    "swagger.api.basepath", "/.*/api"));
     }
 }

@@ -12,7 +12,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.ext.java.server;
+package com.codenvy.wsagent.server;
 
 import org.eclipse.che.api.core.websocket.WebSocketMessageReceiver;
 import org.eclipse.che.api.core.websocket.impl.BasicWebSocketEndpoint;
